@@ -1,0 +1,1 @@
+import Header from '../../../components/Header';import {RegisterForm} from '../../../components/AuthForm';export default function Register(){return <><Header/><main className="flex min-h-screen items-center justify-center px-5 py-24"><div><h1 className="mb-8 text-2xl font-semibold">Create author account</h1><RegisterForm/></div></main></>}

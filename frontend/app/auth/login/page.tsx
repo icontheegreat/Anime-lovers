@@ -1,0 +1,1 @@
+import Header from '../../../components/Header';import {LoginForm} from '../../../components/AuthForm';export default function Login(){return <><Header/><main className="flex min-h-screen items-center justify-center px-5"><div><h1 className="mb-8 text-2xl font-semibold">Log in</h1><LoginForm/></div></main></>}

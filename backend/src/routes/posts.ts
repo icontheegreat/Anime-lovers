@@ -1,0 +1,2 @@
+import {Router} from 'express'; import {upload} from '../middleware/upload'; import {requireAuth} from '../middleware/auth'; import {createPost,listPosts,getPost,updatePost,deletePost,myPosts} from '../controllers/posts';
+const r=Router();r.get('/',listPosts);r.get('/mine',requireAuth,myPosts);r.get('/:slug',getPost);r.post('/',requireAuth,upload.single('media'),createPost);r.put('/:id',requireAuth,upload.single('media'),updatePost);r.delete('/:id',requireAuth,deletePost);export default r;

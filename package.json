@@ -1,0 +1,12 @@
+{
+  "name": "anime-visual-posts",
+  "private": true,
+  "scripts": {
+    "dev": "concurrently \"npm:dev:frontend\" \"npm:dev:backend\"",
+    "dev:frontend": "npm --prefix frontend run dev",
+    "dev:backend": "npm --prefix backend run dev",
+    "build": "npm --prefix frontend run build && npm --prefix backend run build",
+    "start": "concurrently \"npm:--prefix frontend start\" \"npm:--prefix backend start\""
+  },
+  "devDependencies": { "concurrently": "^9.2.1" }
+}

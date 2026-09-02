@@ -1,0 +1,221 @@
+@import "tailwindcss";
+
+:root {
+  background: #ffffff;
+  color: #111111;
+  color-scheme: light;
+}
+
+html,
+body {
+  margin: 0;
+  min-height: 100%;
+  background: #ffffff;
+  color: #111111;
+}
+
+html.dark,
+html.dark body {
+  background: #111827;
+  color: #ffffff;
+  color-scheme: dark;
+}
+
+body {
+  font-family: Arial, Helvetica, sans-serif;
+  transition:
+    background-color 0.2s ease,
+    color 0.2s ease;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+button,
+input,
+textarea {
+  font: inherit;
+}
+
+button {
+  cursor: pointer;
+}
+
+/* -------------------------------- */
+/* TOP HEADER                       */
+/* -------------------------------- */
+
+.top-header {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 50;
+
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  padding: 16px 20px;
+
+  background: rgba(255, 255, 255, 0.92);
+  color: #111111;
+
+  backdrop-filter: blur(12px);
+}
+
+html.dark .top-header {
+  background: rgba(17, 24, 39, 0.92);
+  color: #ffffff;
+}
+
+.site-logo {
+  color: inherit;
+  text-decoration: none;
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+.theme-toggle {
+  border: 1px solid rgba(0, 0, 0, 0.12);
+  background: transparent;
+  color: inherit;
+
+  border-radius: 999px;
+
+  padding: 7px 13px;
+
+  font-size: 12px;
+}
+
+html.dark .theme-toggle {
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+/* -------------------------------- */
+/* BOTTOM NAVIGATION                */
+/* -------------------------------- */
+
+.bottom-nav {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+
+  z-index: 50;
+
+  display: flex;
+  align-items: center;
+  justify-content: space-around;
+
+  height: 64px;
+
+  background: rgba(255, 255, 255, 0.94);
+  border-top: 1px solid rgba(0, 0, 0, 0.08);
+
+  backdrop-filter: blur(14px);
+
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+html.dark .bottom-nav {
+  background: rgba(17, 24, 39, 0.96);
+  border-top-color: rgba(255, 255, 255, 0.1);
+}
+
+.bottom-nav-item {
+  border: 0;
+  background: transparent;
+
+  color: #6b7280;
+
+  text-decoration: none;
+
+  font-size: 12px;
+  font-weight: 500;
+
+  padding: 10px 12px;
+}
+
+.bottom-nav-item.active {
+  color: #111111;
+  font-weight: 700;
+}
+
+html.dark .bottom-nav-item {
+  color: #9ca3af;
+}
+
+html.dark .bottom-nav-item.active {
+  color: #ffffff;
+}
+
+/* -------------------------------- */
+/* EXISTING MEDIA                   */
+/* -------------------------------- */
+
+.media-shell video,
+.media-shell img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  display: block;
+}
+
+.hide-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+.hide-scrollbar {
+  scrollbar-width: none;
+}
+
+/* -------------------------------- */
+/* DARK MODE HELPERS                */
+/* -------------------------------- */
+
+html.dark .bg-white {
+  background-color: #111827 !important;
+}
+
+html.dark .text-black {
+  color: #ffffff !important;
+}
+
+html.dark .text-neutral-900 {
+  color: #ffffff !important;
+}
+
+html.dark .text-neutral-800 {
+  color: #f3f4f6 !important;
+}
+
+html.dark .text-neutral-700 {
+  color: #e5e7eb !important;
+}
+
+html.dark .text-neutral-600 {
+  color: #d1d5db !important;
+}
+
+html.dark .text-neutral-500 {
+  color: #9ca3af !important;
+}
+
+html.dark .border {
+  border-color: rgba(255, 255, 255, 0.12) !important;
+}
+
+html.dark input,
+html.dark textarea {
+  background: #1f2937;
+  color: #ffffff;
+  border-color: rgba(255, 255, 255, 0.15);
+}
+
+html.dark input::placeholder,
+html.dark textarea::placeholder {
+  color: #9ca3af;
+}
