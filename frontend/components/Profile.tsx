@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 
 import { api } from '../lib/api';
-import { Author, Post } from '../types';
+import { Author, Post, ThreadItem } from '../types';
 
 export default function Profile() {
   const router = useRouter();
@@ -18,15 +18,12 @@ export default function Profile() {
   useEffect(() => {
     async function loadProfile() {
       try {
-        // Get logged-in user
         const data = await api('/auth/me');
 
         console.log('AUTH RESPONSE:', data);
 
         setAuthor(data.author);
 
-        // IMPORTANT:
-        // Use the same endpoint Dashboard uses.
         try {
           const postsData = await api('/posts/mine');
 
@@ -41,7 +38,6 @@ export default function Profile() {
         }
       } catch (error) {
         console.error('AUTH ERROR:', error);
-
         setAuthor(null);
       } finally {
         setLoading(false);
@@ -91,8 +87,8 @@ export default function Profile() {
     <main className="mx-auto min-h-screen max-w-4xl px-5 pb-32 pt-24">
 
       {/* PROFILE HEADER */}
-      <section className="flex flex-col items-center text-center">
 
+      <section className="flex flex-col items-center text-center">
         {author.profileImage ? (
           <img
             src={author.profileImage}
@@ -124,6 +120,7 @@ export default function Profile() {
         )}
 
         {/* PROFILE ACTIONS */}
+
         <div className="mt-6 flex flex-wrap justify-center gap-3">
           <button
             type="button"
@@ -146,6 +143,7 @@ export default function Profile() {
       </section>
 
       {/* SOCIAL LINKS */}
+
       {Object.keys(socials).length > 0 && (
         <section className="mt-10 border-t pt-8">
           <h2 className="mb-4 text-lg font-semibold">
@@ -171,6 +169,7 @@ export default function Profile() {
       )}
 
       {/* POSTS */}
+
       <section className="mt-10 border-t pt-8">
         <h2 className="mb-6 text-lg font-semibold">
           Past Posts
@@ -190,50 +189,113 @@ export default function Profile() {
           </p>
         ) : (
           <div className="grid gap-5 sm:grid-cols-2">
-            {posts.map((post) => (
-              <article
-                key={post._id}
-                className="overflow-hidden rounded-xl border"
-              >
-                {post.mediaType === 'video' ? (
-                  <video
-                    src={post.mediaUrl}
-                    controls
-                    playsInline
-                    className="aspect-video w-full object-cover"
-                  />
-                ) : (
-                  <img
-                    src={post.mediaUrl}
-                    alt={post.anime}
-                    className="aspect-video w-full object-cover"
-                  />
-                )}
+            {posts.map((post) => {
+              const thread: ThreadItem[] =
+                post.thread ?? [];
 
-                <div className="p-4">
-                  <p className="font-medium">
-                    {post.anime}
-                  </p>
+              return (
+                <article
+                  key={post._id}
+                  className="overflow-hidden rounded-xl border"
+                >
 
-                  <p className="mt-2 line-clamp-3 text-sm text-neutral-500">
-                    {post.description}
-                  </p>
+                  {/* MAIN MEDIA */}
 
-                  {post.tags?.length > 0 && (
-                    <div className="mt-3 flex flex-wrap gap-2">
-                      {post.tags.map((tag) => (
-                        <span
-                          key={tag}
-                          className="rounded-full border px-2.5 py-1 text-xs"
-                        >
-                          [{tag}]
-                        </span>
-                      ))}
-                    </div>
+                  {post.mediaType === 'video' ? (
+                    <video
+                      src={post.mediaUrl}
+                      controls
+                      playsInline
+                      className="aspect-video w-full object-cover"
+                    />
+                  ) : (
+                    <img
+                      src={post.mediaUrl}
+                      alt={post.anime}
+                      className="aspect-video w-full object-cover"
+                    />
                   )}
-                </div>
-              </article>
-            ))}
+
+                  <div className="p-4">
+
+                    {/* ANIME */}
+
+                    <p className="font-medium">
+                      {post.anime}
+                    </p>
+
+                    {/* MAIN DESCRIPTION */}
+
+                    <p className="mt-2 line-clamp-3 text-sm text-neutral-500">
+                      {post.description}
+                    </p>
+
+                    {/* TAGS */}
+
+                    {post.tags?.length > 0 && (
+                      <div className="mt-3 flex flex-wrap gap-2">
+                        {post.tags.map((tag) => (
+                          <span
+                            key={tag}
+                            className="rounded-full border px-2.5 py-1 text-xs"
+                          >
+                            [{tag}]
+                          </span>
+                        ))}
+                      </div>
+                    )}
+
+                    {/* ADDITIONAL DETAILS */}
+
+                    {thread.length > 0 && (
+                      <div className="mt-5 border-t pt-5">
+                        <p className="mb-4 text-sm font-semibold">
+                          Additional details
+                        </p>
+
+                        <div className="space-y-6">
+                          {thread.map(
+                            (item, index) => (
+                              <div
+                                key={`${post._id}-thread-${index}`}
+                                className="space-y-3"
+                              >
+
+                                {/* THREAD MEDIA */}
+
+                                {item.mediaType ===
+                                'video' ? (
+                                  <video
+                                    src={item.mediaUrl}
+                                    controls
+                                    playsInline
+                                    className="aspect-video w-full rounded-lg object-cover"
+                                  />
+                                ) : (
+                                  <img
+                                    src={item.mediaUrl}
+                                    alt=""
+                                    className="aspect-video w-full rounded-lg object-cover"
+                                  />
+                                )}
+
+                                {/* THREAD DESCRIPTION */}
+
+                                <p className="text-sm leading-6 text-neutral-500">
+                                  {item.description}
+                                </p>
+
+                              </div>
+                            )
+                          )}
+                        </div>
+                      </div>
+                    )}
+
+                  </div>
+                </article>
+              );
+            })}
           </div>
         )}
       </section>
