@@ -27,24 +27,26 @@ app.use(
   cors({
     origin: function (origin, callback) {
       // Allow requests with no origin
-      // such as Postman/server-to-server requests.
       if (!origin) {
         return callback(null, true);
       }
 
-      // Allow localhost during development.
+      // Allow localhost during development
       if (/^http:\/\/localhost:\d+$/.test(origin)) {
         return callback(null, true);
       }
 
-      // Allow all origins in development.
-      if (process.env.NODE_ENV === 'development') {
+      // Allow the configured frontend in production
+      if (origin === env.corsOrigin) {
         return callback(null, true);
       }
 
-      return callback(
-        new Error('Not allowed by CORS')
-      );
+      // Allow all origins in development
+      if (env.nodeEnv === 'development') {
+        return callback(null, true);
+      }
+
+      return callback(new Error('Not allowed by CORS'));
     },
 
     credentials: true,
