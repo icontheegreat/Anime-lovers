@@ -1,7 +1,11 @@
 import { Response } from 'express';
 import { z } from 'zod';
 
-import { Post } from '../models/Post';
+import {
+  Post,
+  MediaType
+} from '../models/Post';
+
 import { AuthRequest } from '../middleware/auth';
 
 import {
@@ -49,7 +53,9 @@ function getFiles(
   return files?.[field]?.[0] ?? null;
 }
 
-function getThreadDescriptions(req: AuthRequest) {
+function getThreadDescriptions(
+  req: AuthRequest
+) {
   if (!req.body.threadDescriptions) {
     return [];
   }
@@ -89,12 +95,21 @@ async function validateVideo(
 
 async function uploadPostMedia(
   file: Express.Multer.File
-) {
-  const mediaType = file.mimetype.startsWith(
-    'video/'
-  )
-    ? 'video'
-    : 'image';
+): Promise<{
+  mediaType: MediaType;
+  mediaUrl: string;
+  mediaPublicId: string;
+}> {
+  /*
+   * Explicitly type this as MediaType.
+   *
+   * This prevents TypeScript from treating the
+   * value as a generic string.
+   */
+  const mediaType: MediaType =
+    file.mimetype.startsWith('video/')
+      ? 'video'
+      : 'image';
 
   const uploaded = await uploadBuffer(
     file.buffer,
@@ -102,6 +117,9 @@ async function uploadPostMedia(
     `anime-platform/${mediaType}s`
   );
 
+  /*
+   * Video duration validation.
+   */
   if (mediaType === 'video') {
     const duration = Number(
       uploaded.duration
@@ -142,7 +160,7 @@ export async function createPost(
 ) {
   const uploadedMedia: {
     publicId: string;
-    mediaType: 'image' | 'video';
+    mediaType: MediaType;
   }[] = [];
 
   try {
@@ -150,6 +168,9 @@ export async function createPost(
       req.body
     );
 
+    /*
+     * MAIN DESCRIPTION
+     */
     if (
       countWords(data.description) < 2
     ) {
@@ -159,6 +180,9 @@ export async function createPost(
       });
     }
 
+    /*
+     * MAIN MEDIA
+     */
     const mainFile = getFiles(
       req,
       'media'
@@ -195,10 +219,12 @@ export async function createPost(
     }
 
     /*
-     * MAIN MEDIA
+     * MAIN MEDIA UPLOAD
      */
     const mainUpload =
-      await uploadPostMedia(mainFile);
+      await uploadPostMedia(
+        mainFile
+      );
 
     uploadedMedia.push({
       publicId:
@@ -208,13 +234,16 @@ export async function createPost(
     });
 
     /*
-     * THREAD
+     * THREAD DESCRIPTIONS
      */
     const threadDescriptions =
       getThreadDescriptions(req);
 
+    /*
+     * THREAD
+     */
     const thread: {
-      mediaType: 'image' | 'video';
+      mediaType: MediaType;
       mediaUrl: string;
       mediaPublicId: string;
       description: string;
@@ -231,7 +260,7 @@ export async function createPost(
       );
 
       /*
-       * No file = this slot does not exist.
+       * No file means this slot does not exist.
        */
       if (!file) {
         continue;
@@ -240,7 +269,13 @@ export async function createPost(
       const description =
         threadDescriptions[i] || '';
 
-      if (countWords(description) < 2) {
+      /*
+       * Each thread description requires
+       * at least 2 words.
+       */
+      if (
+        countWords(description) < 2
+      ) {
         throw new Error(
           `Detail ${
             i + 1
@@ -250,6 +285,9 @@ export async function createPost(
 
       await validateVideo(file);
 
+      /*
+       * Upload thread media.
+       */
       const uploaded =
         await uploadPostMedia(file);
 
@@ -260,13 +298,20 @@ export async function createPost(
           uploaded.mediaType
       });
 
+      /*
+       * Only actually uploaded thread
+       * items are added to the database.
+       */
       thread.push({
         mediaType:
           uploaded.mediaType,
+
         mediaUrl:
           uploaded.mediaUrl,
+
         mediaPublicId:
           uploaded.mediaPublicId,
+
         description
       });
     }
@@ -275,7 +320,8 @@ export async function createPost(
      * CREATE POST
      */
     const post = await Post.create({
-      authorId: req.authorId,
+      authorId:
+        req.authorId,
 
       mediaType:
         mainUpload.mediaType,
@@ -289,15 +335,17 @@ export async function createPost(
       description:
         data.description,
 
-      anime: data.anime,
+      anime:
+        data.anime,
 
       tags,
 
       thread,
 
-      slug: await uniqueSlug(
-        data.anime
-      ),
+      slug:
+        await uniqueSlug(
+          data.anime
+        ),
 
       deletedAt: null
     });
@@ -311,7 +359,9 @@ export async function createPost(
      * remove every uploaded file so we don't leave
      * orphaned media behind.
      */
-    for (const item of uploadedMedia) {
+    for (
+      const item of uploadedMedia
+    ) {
       try {
         await destroyMedia(
           item.publicId,
@@ -343,7 +393,9 @@ export async function listPosts(
 
   const cursor =
     typeof req.query.cursor === 'string'
-      ? new Date(req.query.cursor)
+      ? new Date(
+          req.query.cursor
+        )
       : null;
 
   const filter: any = {
@@ -352,24 +404,25 @@ export async function listPosts(
 
   if (
     cursor &&
-    !Number.isNaN(cursor.getTime())
+    !Number.isNaN(
+      cursor.getTime()
+    )
   ) {
     filter.createdAt = {
       $lt: cursor
     };
   }
 
-  const posts = await Post.find(
-    filter
-  )
-    .sort({
-      createdAt: -1
-    })
-    .limit(limit)
-    .populate(
-      'authorId',
-      'name country profileImage'
-    );
+  const posts =
+    await Post.find(filter)
+      .sort({
+        createdAt: -1
+      })
+      .limit(limit)
+      .populate(
+        'authorId',
+        'name country profileImage'
+      );
 
   const nextCursor =
     posts.length === limit
@@ -399,7 +452,8 @@ export async function getPost(
 
   if (!post) {
     return res.status(404).json({
-      message: 'Post not found.'
+      message:
+        'Post not found.'
     });
   }
 
@@ -421,16 +475,23 @@ export async function updatePost(
 
   if (!post) {
     return res.status(404).json({
-      message: 'Post not found.'
+      message:
+        'Post not found.'
     });
   }
 
-  const data = bodySchema.parse(
-    req.body
-  );
+  const data =
+    bodySchema.parse(
+      req.body
+    );
 
+  /*
+   * MAIN DESCRIPTION
+   */
   if (
-    countWords(data.description) < 2
+    countWords(
+      data.description
+    ) < 2
   ) {
     return res.status(400).json({
       message:
@@ -439,7 +500,7 @@ export async function updatePost(
   }
 
   /*
-   * Update basic post information.
+   * UPDATE BASIC POST INFORMATION
    */
   post.description =
     data.description;
@@ -447,38 +508,55 @@ export async function updatePost(
   post.anime =
     data.anime;
 
+  /*
+   * TAGS
+   */
   post.tags =
     normalizeTags(
       req.body.tags
-        ? JSON.parse(req.body.tags)
+        ? JSON.parse(
+            req.body.tags
+          )
         : []
     );
 
-  if (post.tags.length > 5) {
+  if (
+    post.tags.length > 5
+  ) {
     return res.status(400).json({
-      message: 'Maximum 5 tags.'
+      message:
+        'Maximum 5 tags.'
     });
   }
 
   /*
-   * Replace main media if a new one
-   * was uploaded.
+   * REPLACE MAIN MEDIA
+   * if a new file was uploaded.
    */
   const newMainFile =
-    getFiles(req, 'media');
+    getFiles(
+      req,
+      'media'
+    );
 
   if (newMainFile) {
     const oldPublicId =
       post.mediaPublicId;
 
-    const oldMediaType =
+    const oldMediaType: MediaType =
       post.mediaType;
 
+    /*
+     * Upload new media.
+     */
     const uploaded =
       await uploadPostMedia(
         newMainFile
       );
 
+    /*
+     * Replace database values.
+     */
     post.mediaType =
       uploaded.mediaType;
 
@@ -488,6 +566,9 @@ export async function updatePost(
     post.mediaPublicId =
       uploaded.mediaPublicId;
 
+    /*
+     * Remove old Cloudinary media.
+     */
     try {
       await destroyMedia(
         oldPublicId,
@@ -498,7 +579,7 @@ export async function updatePost(
 
   await post.save();
 
-  res.json({
+  return res.json({
     post
   });
 }
@@ -516,12 +597,13 @@ export async function deletePost(
 
   if (!post) {
     return res.status(404).json({
-      message: 'Post not found.'
+      message:
+        'Post not found.'
     });
   }
 
   /*
-   * Soft delete.
+   * SOFT DELETE
    */
   post.deletedAt =
     new Date();
@@ -529,7 +611,7 @@ export async function deletePost(
   await post.save();
 
   /*
-   * Delete main media.
+   * DELETE MAIN MEDIA
    */
   try {
     await destroyMedia(
@@ -539,7 +621,7 @@ export async function deletePost(
   } catch {}
 
   /*
-   * Delete every thread media.
+   * DELETE THREAD MEDIA
    */
   for (
     const item of post.thread || []
@@ -552,7 +634,7 @@ export async function deletePost(
     } catch {}
   }
 
-  res.json({
+  return res.json({
     message:
       'Post deleted.'
   });
@@ -564,12 +646,13 @@ export async function myPosts(
 ) {
   const posts =
     await Post.find({
-      authorId: req.authorId
+      authorId:
+        req.authorId
     }).sort({
       createdAt: -1
     });
 
-  res.json({
+  return res.json({
     posts
   });
 }
