@@ -1,5 +1,7 @@
 import './globals.css';
 
+import BottomNav from '../components/BottomNav';
+
 export const metadata = {
   title: 'Anime Visual Posts',
   description: 'A minimal visual anime post feed.',
@@ -12,7 +14,11 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body>{children}</body>
+      <body className="pb-20">
+        {children}
+
+        <BottomNav />
+      </body>
     </html>
   );
 }

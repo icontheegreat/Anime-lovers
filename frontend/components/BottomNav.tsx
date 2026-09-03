@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
+
 import { api } from '../lib/api';
 
 export default function BottomNav() {
@@ -13,13 +14,17 @@ export default function BottomNav() {
 
   useEffect(() => {
     api('/auth/me')
-      .then((data) => setMe(data.author))
-      .catch(() => setMe(null));
+      .then((data) => {
+        setMe(data.author);
+      })
+      .catch(() => {
+        setMe(null);
+      });
   }, []);
 
   function handleProfile() {
     if (me) {
-      router.push('/dashboard');
+      router.push('/profile');
     } else {
       router.push('/auth/login');
     }
@@ -31,7 +36,11 @@ export default function BottomNav() {
     <nav className="bottom-nav">
       <Link
         href="/"
-        className={isActive('/') ? 'bottom-nav-item active' : 'bottom-nav-item'}
+        className={
+          isActive('/')
+            ? 'bottom-nav-item active'
+            : 'bottom-nav-item'
+        }
       >
         <span>Home</span>
       </Link>
@@ -61,7 +70,12 @@ export default function BottomNav() {
       <button
         type="button"
         onClick={handleProfile}
-        className="bottom-nav-item"
+        className={
+          pathname === '/profile' ||
+          pathname === '/profile/edit'
+            ? 'bottom-nav-item active'
+            : 'bottom-nav-item'
+        }
       >
         <span>Profile</span>
       </button>
