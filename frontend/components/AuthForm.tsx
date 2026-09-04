@@ -27,10 +27,7 @@ export function LoginForm() {
       });
 
       if (data.token) {
-        sessionStorage.setItem(
-          'auth_token',
-          data.token
-        );
+       localStorage.setItem('auth_token', data.token);
       }
 
       router.push('/profile');
@@ -126,10 +123,7 @@ export function RegisterForm() {
         });
 
       if (data.token) {
-        sessionStorage.setItem(
-          'auth_token',
-          data.token
-        );
+        localStorage.setItem('auth_token', data.token);
       }
 
       router.push('/profile');

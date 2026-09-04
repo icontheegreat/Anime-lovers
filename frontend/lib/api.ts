@@ -8,7 +8,7 @@ export async function api(
 ) {
   const token =
     typeof window !== 'undefined'
-      ? sessionStorage.getItem('auth_token')
+      ? localStorage.getItem('auth_token')
       : null;
 
   const headers = new Headers(
