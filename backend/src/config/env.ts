@@ -13,15 +13,42 @@ for (const key of required) {
 
 export const env = {
   nodeEnv: process.env.NODE_ENV ?? 'development',
-  port: Number(process.env.PORT ?? 5001),
-  mongoUri: process.env.MONGODB_URI ?? '',
-  jwtSecret: process.env.JWT_SECRET ?? '',
-  jwtExpiresIn: process.env.JWT_EXPIRES_IN ?? '7d',
-  frontendUrl: process.env.FRONTEND_URL ?? 'http://localhost:3000',
-  corsOrigin: process.env.CORS_ORIGIN ?? 'http://localhost:3000',
+
+  port: Number(
+    process.env.PORT ?? 5001
+  ),
+
+  mongoUri:
+    process.env.MONGODB_URI ?? '',
+
+  jwtSecret:
+    process.env.JWT_SECRET ?? '',
+
+  jwtExpiresIn:
+    process.env.JWT_EXPIRES_IN ?? '7d',
+
+  frontendUrl:
+    process.env.FRONTEND_URL ??
+    'http://localhost:3000',
+
+  corsOrigin:
+    process.env.CORS_ORIGIN ??
+    'http://localhost:3000',
+
+  youtubeApiKey:
+    process.env.YOUTUBE_API_KEY ?? '',
+
   cloudinary: {
-    cloudName: process.env.CLOUDINARY_CLOUD_NAME ?? '',
-    apiKey: process.env.CLOUDINARY_API_KEY ?? '',
-    apiSecret: process.env.CLOUDINARY_API_SECRET ?? ''
-  }
+    cloudName:
+      process.env.CLOUDINARY_CLOUD_NAME ??
+      '',
+
+    apiKey:
+      process.env.CLOUDINARY_API_KEY ??
+      '',
+
+    apiSecret:
+      process.env.CLOUDINARY_API_SECRET ??
+      '',
+  },
 };

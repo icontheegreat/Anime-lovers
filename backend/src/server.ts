@@ -10,6 +10,7 @@ import { connectDb } from './config/db';
 import authRoutes from './routes/auth';
 import postRoutes from './routes/posts';
 import profileRoutes from './routes/profiles';
+import discoverRoutes from './routes/discover';
 
 const app = express();
 
@@ -80,6 +81,7 @@ app.use(
 
 app.use(cookieParser());
 
+
 /*
  * RATE LIMITING
  *
@@ -117,6 +119,7 @@ app.get('/api/health', (_req, res) => {
 app.use('/api/auth', authRoutes);
 app.use('/api/posts', postRoutes);
 app.use('/api/profiles', profileRoutes);
+app.use('/api/discover', discoverRoutes);
 
 /*
  * 404 HANDLER
