@@ -11,26 +11,34 @@ export function LoginForm() {
   const [error, setError] = useState('');
   const router = useRouter();
 
-  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
+  async function handleSubmit(
+    e: React.FormEvent<HTMLFormElement>
+  ) {
     e.preventDefault();
     setError('');
 
     try {
-      await api('/auth/login', {
+      const data = await api('/auth/login', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
         body: JSON.stringify({
           email,
           password
         })
       });
 
-      // After successful login, go directly to Home
-      router.push('/');
+      if (data.token) {
+        sessionStorage.setItem(
+          'auth_token',
+          data.token
+        );
+      }
+
+      router.push('/profile');
     } catch (e: any) {
-      setError(e?.message || 'Login failed.');
+      setError(
+        e?.message ||
+          'Login failed.'
+      );
     }
   }
 
@@ -84,16 +92,21 @@ export function RegisterForm() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [country, setCountry] = useState('');
-  const [file, setFile] = useState<File | null>(null);
+  const [file, setFile] =
+    useState<File | null>(null);
   const [error, setError] = useState('');
   const router = useRouter();
 
-  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
+  async function handleSubmit(
+    e: React.FormEvent<HTMLFormElement>
+  ) {
     e.preventDefault();
     setError('');
 
     if (!file) {
-      setError('Profile image is required.');
+      setError(
+        'Profile image is required.'
+      );
       return;
     }
 
@@ -106,15 +119,25 @@ export function RegisterForm() {
     fd.append('profileImage', file);
 
     try {
-      await api('/auth/register', {
-        method: 'POST',
-        body: fd
-      });
+      const data =
+        await api('/auth/register', {
+          method: 'POST',
+          body: fd
+        });
 
-      // After successful registration, go directly to Home
-      router.push('/');
+      if (data.token) {
+        sessionStorage.setItem(
+          'auth_token',
+          data.token
+        );
+      }
+
+      router.push('/profile');
     } catch (e: any) {
-      setError(e?.message || 'Registration failed.');
+      setError(
+        e?.message ||
+          'Registration failed.'
+      );
     }
   }
 
@@ -156,9 +179,11 @@ export function RegisterForm() {
           required
           type="file"
           accept="image/*"
-          onChange={(e) => {
-            setFile(e.target.files?.[0] || null);
-          }}
+          onChange={(e) =>
+            setFile(
+              e.target.files?.[0] || null
+            )
+          }
           className="mt-2 block w-full text-sm"
         />
       </label>
@@ -208,7 +233,9 @@ function Field({
         required
         type={type}
         value={value}
-        onChange={(e) => set(e.target.value)}
+        onChange={(e) =>
+          set(e.target.value)
+        }
         className="mt-2 w-full rounded-lg border px-3 py-3 outline-none focus:border-black"
       />
     </label>
