@@ -9,33 +9,75 @@ export function LoginForm() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
+  const [busy, setBusy] = useState(false);
+
   const router = useRouter();
 
   async function handleSubmit(
     e: React.FormEvent<HTMLFormElement>
   ) {
     e.preventDefault();
+
     setError('');
+    setBusy(true);
 
     try {
-      const data = await api('/auth/login', {
-        method: 'POST',
-        body: JSON.stringify({
-          email,
-          password
-        })
-      });
+      const data = await api(
+        '/auth/login',
+        {
+          method: 'POST',
+          body: JSON.stringify({
+            email,
+            password
+          })
+        }
+      );
 
-      if (data.token) {
-       localStorage.setItem('auth_token', data.token);
+      /*
+       * The backend MUST return a JWT.
+       */
+      if (!data?.token) {
+        throw new Error(
+          'Login succeeded, but no authentication token was returned.'
+        );
       }
 
-      router.push('/profile');
+      /*
+       * Save the JWT for this browser.
+       */
+      localStorage.setItem(
+        'auth_token',
+        data.token
+      );
+
+      /*
+       * Immediately verify the new token.
+       *
+       * This prevents us from redirecting to the
+       * profile when authentication isn't actually
+       * available to the browser.
+       */
+      await api('/auth/me');
+
+      /*
+       * Authentication is confirmed.
+       */
+      router.replace('/profile');
+      router.refresh();
     } catch (e: any) {
+      /*
+       * Don't leave a bad token sitting around.
+       */
+      localStorage.removeItem(
+        'auth_token'
+      );
+
       setError(
         e?.message ||
           'Login failed.'
       );
+    } finally {
+      setBusy(false);
     }
   }
 
@@ -66,9 +108,10 @@ export function LoginForm() {
 
       <button
         type="submit"
-        className="w-full rounded-lg bg-black px-4 py-3 text-white"
+        disabled={busy}
+        className="w-full rounded-lg bg-black px-4 py-3 text-white disabled:opacity-50"
       >
-        Log in
+        {busy ? 'Logging in…' : 'Log in'}
       </button>
 
       <p className="text-sm text-neutral-500">
@@ -92,12 +135,15 @@ export function RegisterForm() {
   const [file, setFile] =
     useState<File | null>(null);
   const [error, setError] = useState('');
+  const [busy, setBusy] = useState(false);
+
   const router = useRouter();
 
   async function handleSubmit(
     e: React.FormEvent<HTMLFormElement>
   ) {
     e.preventDefault();
+
     setError('');
 
     if (!file) {
@@ -106,6 +152,8 @@ export function RegisterForm() {
       );
       return;
     }
+
+    setBusy(true);
 
     const fd = new FormData();
 
@@ -116,22 +164,46 @@ export function RegisterForm() {
     fd.append('profileImage', file);
 
     try {
-      const data =
-        await api('/auth/register', {
+      const data = await api(
+        '/auth/register',
+        {
           method: 'POST',
           body: fd
-        });
+        }
+      );
 
-      if (data.token) {
-        localStorage.setItem('auth_token', data.token);
+      /*
+       * Registration MUST return the JWT too.
+       */
+      if (!data?.token) {
+        throw new Error(
+          'Account was created, but no authentication token was returned.'
+        );
       }
 
-      router.push('/profile');
+      localStorage.setItem(
+        'auth_token',
+        data.token
+      );
+
+      /*
+       * Verify authentication before redirecting.
+       */
+      await api('/auth/me');
+
+      router.replace('/profile');
+      router.refresh();
     } catch (e: any) {
+      localStorage.removeItem(
+        'auth_token'
+      );
+
       setError(
         e?.message ||
           'Registration failed.'
       );
+    } finally {
+      setBusy(false);
     }
   }
 
@@ -175,7 +247,8 @@ export function RegisterForm() {
           accept="image/*"
           onChange={(e) =>
             setFile(
-              e.target.files?.[0] || null
+              e.target.files?.[0] ||
+                null
             )
           }
           className="mt-2 block w-full text-sm"
@@ -190,9 +263,12 @@ export function RegisterForm() {
 
       <button
         type="submit"
-        className="w-full rounded-lg bg-black px-4 py-3 text-white"
+        disabled={busy}
+        className="w-full rounded-lg bg-black px-4 py-3 text-white disabled:opacity-50"
       >
-        Create account
+        {busy
+          ? 'Creating account…'
+          : 'Create account'}
       </button>
 
       <p className="text-sm text-neutral-500">

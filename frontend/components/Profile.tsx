@@ -15,6 +15,26 @@ export default function Profile() {
   const [postsLoading, setPostsLoading] = useState(true);
   const [postsError, setPostsError] = useState('');
 
+  const [loggingOut, setLoggingOut] = useState(false);
+
+async function handleLogout() {
+  setLoggingOut(true);
+
+  try {
+    await api('/auth/logout', {
+      method: 'POST'
+    });
+  } catch {
+    // Even if the server-side cookie doesn't clear,
+    // the local JWT must still be removed.
+  } finally {
+    localStorage.removeItem('auth_token');
+
+    router.replace('/auth/login');
+    router.refresh();
+  }
+}
+
   useEffect(() => {
     async function loadProfile() {
       try {
@@ -130,15 +150,14 @@ export default function Profile() {
             Edit Profile
           </button>
 
-          <button
-            type="button"
-            onClick={() => {
-              console.log('Logout clicked');
-            }}
-            className="rounded-lg border px-5 py-2.5 text-sm"
-          >
-            Log Out
-          </button>
+        <button
+  type="button"
+  onClick={handleLogout}
+  disabled={loggingOut}
+  className="rounded-lg border px-5 py-2.5 text-sm disabled:opacity-50"
+>
+  {loggingOut ? 'Logging out…' : 'Log Out'}
+</button>
         </div>
       </section>
 

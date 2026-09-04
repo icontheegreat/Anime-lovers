@@ -15,9 +15,11 @@ export async function api(
     options.headers
   );
 
+  // Don't manually set Content-Type for FormData.
+  // The browser needs to create the multipart boundary.
   if (
-    !headers.has('Content-Type') &&
-    !(options.body instanceof FormData)
+    !(options.body instanceof FormData) &&
+    !headers.has('Content-Type')
   ) {
     headers.set(
       'Content-Type',
@@ -48,7 +50,7 @@ export async function api(
   if (!res.ok) {
     throw new Error(
       data.message ||
-        'Something went wrong.'
+        `Request failed (${res.status}).`
     );
   }
 
