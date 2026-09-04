@@ -8,7 +8,7 @@ export async function api(
 ) {
   const res = await fetch(`${API}${path}`, {
     ...options,
-    credentials: 'include',
+    credentials: 'include'
   });
 
   const data = await res.json().catch(() => ({}));
