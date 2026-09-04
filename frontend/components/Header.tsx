@@ -8,14 +8,14 @@ export default function Header() {
 
   useEffect(() => {
     const savedTheme = localStorage.getItem('theme');
+    const isDark = savedTheme === 'dark';
 
-    if (savedTheme === 'dark') {
-      document.documentElement.classList.add('dark');
-      setDark(true);
-    } else {
-      document.documentElement.classList.remove('dark');
-      setDark(false);
-    }
+    setDark(isDark);
+
+    document.documentElement.classList.toggle(
+      'dark',
+      isDark
+    );
   }, []);
 
   function toggleTheme() {
@@ -23,18 +23,23 @@ export default function Header() {
 
     setDark(nextDark);
 
-    if (nextDark) {
-      document.documentElement.classList.add('dark');
-      localStorage.setItem('theme', 'dark');
-    } else {
-      document.documentElement.classList.remove('dark');
-      localStorage.setItem('theme', 'light');
-    }
+    document.documentElement.classList.toggle(
+      'dark',
+      nextDark
+    );
+
+    localStorage.setItem(
+      'theme',
+      nextDark ? 'dark' : 'light'
+    );
   }
 
   return (
     <header className="top-header">
-      <Link href="/" className="site-logo">
+      <Link
+        href="/"
+        className="site-logo"
+      >
         IconLoves Anime
       </Link>
 
@@ -42,9 +47,25 @@ export default function Header() {
         type="button"
         onClick={toggleTheme}
         className="theme-toggle"
-        aria-label="Toggle theme"
+        aria-label={
+          dark
+            ? 'Switch to light mode'
+            : 'Switch to dark mode'
+        }
+        aria-pressed={dark}
+        title={
+          dark
+            ? 'Switch to light mode'
+            : 'Switch to dark mode'
+        }
       >
-        {dark ? 'White' : 'Dark'}
+        <span aria-hidden="true">
+          {dark ? '☀' : '◐'}
+        </span>
+
+        <span>
+          {dark ? 'Light' : 'Dark'}
+        </span>
       </button>
     </header>
   );

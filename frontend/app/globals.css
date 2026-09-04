@@ -1,31 +1,41 @@
 @import "tailwindcss";
 
+/* ========================================================= */
+/* THEME                                                     */
+/* ========================================================= */
+
 :root {
   background: #ffffff;
   color: #111111;
   color-scheme: light;
 }
 
-html,
-body {
-  margin: 0;
-  min-height: 100%;
-  background: #ffffff;
-  color: #111111;
-}
-
-html.dark,
-html.dark body {
+html.dark {
   background: #111827;
   color: #ffffff;
   color-scheme: dark;
 }
 
+html,
 body {
+  margin: 0;
+  min-height: 100%;
+}
+
+body {
+  background: #ffffff;
+  color: #111111;
+
   font-family: Arial, Helvetica, sans-serif;
+
   transition:
     background-color 0.2s ease,
     color 0.2s ease;
+}
+
+html.dark body {
+  background: #111827;
+  color: #ffffff;
 }
 
 * {
@@ -42,15 +52,28 @@ button {
   cursor: pointer;
 }
 
-/* -------------------------------- */
-/* TOP HEADER                       */
-/* -------------------------------- */
+a {
+  color: inherit;
+}
+
+/* ========================================================= */
+/* GLOBAL CONTENT                                             */
+/* ========================================================= */
+
+.app-content {
+  min-height: 100vh;
+}
+
+/* ========================================================= */
+/* TOP HEADER                                                 */
+/* ========================================================= */
 
 .top-header {
   position: fixed;
   top: 0;
   left: 0;
   right: 0;
+
   z-index: 50;
 
   display: flex;
@@ -63,40 +86,65 @@ button {
   color: #111111;
 
   backdrop-filter: blur(12px);
+
+  transition:
+    background-color 0.2s ease,
+    color 0.2s ease,
+    border-color 0.2s ease;
 }
 
 html.dark .top-header {
-  background: rgba(17, 24, 39, 0.92);
+  background: rgba(17, 24, 39, 0.94);
   color: #ffffff;
 }
 
 .site-logo {
   color: inherit;
   text-decoration: none;
+
   font-size: 14px;
   font-weight: 700;
+
   letter-spacing: -0.02em;
 }
 
 .theme-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+
   border: 1px solid rgba(0, 0, 0, 0.12);
+
   background: transparent;
   color: inherit;
 
   border-radius: 999px;
 
-  padding: 7px 13px;
+  padding: 7px 12px;
 
   font-size: 12px;
+  line-height: 1;
+
+  transition:
+    background-color 0.2s ease,
+    border-color 0.2s ease;
+}
+
+.theme-toggle:hover {
+  background: rgba(0, 0, 0, 0.04);
 }
 
 html.dark .theme-toggle {
-  border-color: rgba(255, 255, 255, 0.2);
+  border-color: rgba(255, 255, 255, 0.18);
 }
 
-/* -------------------------------- */
-/* BOTTOM NAVIGATION                */
-/* -------------------------------- */
+html.dark .theme-toggle:hover {
+  background: rgba(255, 255, 255, 0.06);
+}
+
+/* ========================================================= */
+/* BOTTOM NAVIGATION                                          */
+/* ========================================================= */
 
 .bottom-nav {
   position: fixed;
@@ -113,16 +161,25 @@ html.dark .theme-toggle {
   height: 64px;
 
   background: rgba(255, 255, 255, 0.94);
+
   border-top: 1px solid rgba(0, 0, 0, 0.08);
 
   backdrop-filter: blur(14px);
 
-  padding-bottom: env(safe-area-inset-bottom);
+  padding-bottom: env(
+    safe-area-inset-bottom
+  );
+
+  transition:
+    background-color 0.2s ease,
+    border-color 0.2s ease;
 }
 
 html.dark .bottom-nav {
   background: rgba(17, 24, 39, 0.96);
-  border-top-color: rgba(255, 255, 255, 0.1);
+
+  border-top-color:
+    rgba(255, 255, 255, 0.1);
 }
 
 .bottom-nav-item {
@@ -137,6 +194,9 @@ html.dark .bottom-nav {
   font-weight: 500;
 
   padding: 10px 12px;
+
+  transition:
+    color 0.2s ease;
 }
 
 .bottom-nav-item.active {
@@ -152,16 +212,18 @@ html.dark .bottom-nav-item.active {
   color: #ffffff;
 }
 
-/* -------------------------------- */
-/* EXISTING MEDIA                   */
-/* -------------------------------- */
+/* ========================================================= */
+/* MEDIA                                                     */
+/* ========================================================= */
 
 .media-shell video,
 .media-shell img {
+  display: block;
+
   width: 100%;
   height: 100%;
+
   object-fit: contain;
-  display: block;
 }
 
 .hide-scrollbar::-webkit-scrollbar {
@@ -172,12 +234,39 @@ html.dark .bottom-nav-item.active {
   scrollbar-width: none;
 }
 
-/* -------------------------------- */
-/* DARK MODE HELPERS                */
-/* -------------------------------- */
+/* ========================================================= */
+/* DARK MODE — COMMON TAILWIND UTILITIES                     */
+/* ========================================================= */
 
 html.dark .bg-white {
   background-color: #111827 !important;
+}
+
+html.dark .bg-white\/90 {
+  background-color: rgba(
+    31,
+    41,
+    55,
+    0.94
+  ) !important;
+}
+
+html.dark .bg-white\/94 {
+  background-color: rgba(
+    17,
+    24,
+    39,
+    0.96
+  ) !important;
+}
+
+html.dark .bg-white\/96 {
+  background-color: rgba(
+    17,
+    24,
+    39,
+    0.98
+  ) !important;
 }
 
 html.dark .text-black {
@@ -204,18 +293,68 @@ html.dark .text-neutral-500 {
   color: #9ca3af !important;
 }
 
-html.dark .border {
-  border-color: rgba(255, 255, 255, 0.12) !important;
+html.dark .border,
+html.dark .border-t,
+html.dark .border-r,
+html.dark .border-b,
+html.dark .border-l {
+  border-color:
+    rgba(255, 255, 255, 0.12) !important;
 }
 
 html.dark input,
 html.dark textarea {
   background: #1f2937;
   color: #ffffff;
-  border-color: rgba(255, 255, 255, 0.15);
+
+  border-color:
+    rgba(255, 255, 255, 0.15);
 }
 
 html.dark input::placeholder,
 html.dark textarea::placeholder {
   color: #9ca3af;
+}
+
+/* ========================================================= */
+/* DARK MODE — LINKS/BUTTONS                                 */
+/* ========================================================= */
+
+html.dark .text-white {
+  color: #ffffff !important;
+}
+
+html.dark .hover\:bg-neutral-50:hover {
+  background-color: #1f2937 !important;
+}
+
+/* ========================================================= */
+/* ACCESSIBILITY                                             */
+/* ========================================================= */
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* ========================================================= */
+/* MOBILE                                                    */
+/* ========================================================= */
+
+@media (max-width: 640px) {
+  .top-header {
+    padding: 14px 16px;
+  }
+
+  .site-logo {
+    font-size: 13px;
+  }
+
+  .theme-toggle {
+    padding: 7px 10px;
+  }
 }

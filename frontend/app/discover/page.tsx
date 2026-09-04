@@ -193,50 +193,46 @@ export default function DiscoverPage() {
         {/* RECENTLY TALKED ABOUT */}
         {/* ================================================= */}
 
-        <section>
-          <div className="mb-5">
-            <h2 className="text-xl font-semibold">
-              Recently talked about
-            </h2>
+        
+<section>
+  <div className="mb-5">
+    <h2 className="text-xl font-semibold">
+      Recently talked about
+    </h2>
 
-            <p className="mt-1 text-sm text-neutral-500">
-              Based on posts from the last
-              24 hours.
-            </p>
+    <p className="mt-1 text-sm text-neutral-500">
+      Based on posts from the last 24 hours.
+    </p>
+  </div>
+
+  {data.recentlyTalked.length === 0 ? (
+    <div className="rounded-xl border p-6">
+      <p className="text-sm text-neutral-500">
+        Nothing has been posted in the last 24 hours yet.
+      </p>
+    </div>
+  ) : (
+    <div className="max-h-40 overflow-y-auto rounded-xl border p-4 sm:max-h-48">
+      <div className="flex flex-wrap gap-3">
+        {data.recentlyTalked.map((topic) => (
+          <div
+            key={topic.name}
+            className="rounded-full border px-4 py-2"
+          >
+            <span className="text-sm font-medium">
+              {topic.name}
+            </span>
+
+            <span className="ml-2 text-xs text-neutral-500">
+              {topic.count}{' '}
+              {topic.count === 1 ? 'post' : 'posts'}
+            </span>
           </div>
-
-          {data.recentlyTalked.length ===
-          0 ? (
-            <div className="rounded-xl border p-6">
-              <p className="text-sm text-neutral-500">
-                Nothing has been posted in
-                the last 24 hours yet.
-              </p>
-            </div>
-          ) : (
-            <div className="flex flex-wrap gap-3">
-              {data.recentlyTalked.map(
-                (topic) => (
-                  <div
-                    key={topic.name}
-                    className="rounded-full border px-4 py-2"
-                  >
-                    <span className="text-sm font-medium">
-                      {topic.name}
-                    </span>
-
-                    <span className="ml-2 text-xs text-neutral-500">
-                      {topic.count}{' '}
-                      {topic.count === 1
-                        ? 'post'
-                        : 'posts'}
-                    </span>
-                  </div>
-                )
-              )}
-            </div>
-          )}
-        </section>
+        ))}
+      </div>
+    </div>
+  )}
+</section>
 
         {/* ================================================= */}
         {/* WHAT'S HAPPENING NOW */}

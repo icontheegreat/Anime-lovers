@@ -13,7 +13,11 @@ import {
   useState,
 } from 'react';
 import { api } from '../lib/api';
-import { Post, Author, ThreadItem } from '../types';
+import {
+  Post,
+  Author,
+  ThreadItem,
+} from '../types';
 
 const threshold = 110;
 
@@ -27,8 +31,10 @@ export default function Feed({
   );
 
   const [index, setIndex] = useState(0);
-  const [cursor, setCursor] = useState<string | null>(null);
-  const [loading, setLoading] = useState(false);
+  const [cursor, setCursor] =
+    useState<string | null>(null);
+  const [loading, setLoading] =
+    useState(false);
 
   const x = useMotionValue(0);
 
@@ -37,6 +43,38 @@ export default function Feed({
     [-250, 250],
     [-8, 8]
   );
+function formatPostTime(dateString: string) {
+  const created = new Date(dateString);
+  const now = new Date();
+
+  const seconds = Math.floor(
+    (now.getTime() - created.getTime()) / 1000
+  );
+
+  if (seconds < 60) {
+    return 'Just now';
+  }
+
+  const minutes = Math.floor(seconds / 60);
+
+  if (minutes < 60) {
+    return `${minutes}m ago`;
+  }
+
+  const hours = Math.floor(minutes / 60);
+
+  if (hours < 24) {
+    return `${hours}h ago`;
+  }
+
+  const days = Math.floor(hours / 24);
+
+  if (days < 7) {
+    return `${days}d ago`;
+  }
+
+  return created.toLocaleDateString();
+}
 
   const videoRef =
     useRef<HTMLVideoElement>(null);
@@ -48,20 +86,27 @@ export default function Feed({
 
     try {
       const q = cursor
-        ? `?limit=8&cursor=${encodeURIComponent(cursor)}`
+        ? `?limit=8&cursor=${encodeURIComponent(
+            cursor
+          )}`
         : '?limit=8';
 
-      const data = await api('/posts' + q);
+      const data = await api(
+        '/posts' + q
+      );
 
       setPosts((currentPosts) => {
         const seen = new Set(
-          currentPosts.map((post) => post._id)
+          currentPosts.map(
+            (post) => post._id
+          )
         );
 
         return [
           ...currentPosts,
           ...data.posts.filter(
-            (post: Post) => !seen.has(post._id)
+            (post: Post) =>
+              !seen.has(post._id)
           ),
         ];
       });
@@ -138,20 +183,24 @@ export default function Feed({
   }
 
   const post = posts[index];
-  const author = post.authorId as Author;
 
-  // Only render details that actually exist.
+  const author =
+    typeof post.authorId === 'object' &&
+    post.authorId !== null
+      ? post.authorId
+      : null;
+
   const thread: ThreadItem[] =
     post.thread ?? [];
 
   return (
     <main className="min-h-screen bg-white pb-20 pt-14">
 
-      <section className="mx-auto flex min-h-[calc(100vh-3.5rem)] max-w-5xl flex-col">
+      <section className="mx-auto flex w-full max-w-5xl flex-col">
 
         {/* MAIN MEDIA */}
 
-        <div className="relative flex min-h-[70vh] flex-1 items-center justify-center overflow-hidden bg-white px-2">
+        <div className="relative flex w-full items-center justify-center overflow-hidden bg-white px-2">
 
           <motion.div
             key={post._id}
@@ -166,11 +215,10 @@ export default function Feed({
               rotate,
             }}
             onDragEnd={dragEnd}
-            className="media-shell h-[70vh] w-full max-w-5xl touch-pan-y select-none"
+            className="media-shell flex w-full max-w-5xl touch-pan-y select-none items-center justify-center"
           >
-
             {post.mediaType === 'video' ? (
-              <div className="relative h-full w-full">
+              <div className="relative flex w-full items-center justify-center">
 
                 <video
                   ref={videoRef}
@@ -179,14 +227,15 @@ export default function Feed({
                   muted
                   loop
                   playsInline
-                  className="h-full w-full object-contain"
+                  className="max-h-[62vh] w-full object-contain sm:max-h-[65vh] lg:max-h-[68vh]"
                 />
 
                 <button
                   aria-label="Pause or play"
                   onClick={() => {
                     if (
-                      videoRef.current?.paused
+                      videoRef.current
+                        ?.paused
                     ) {
                       videoRef.current?.play();
                     } else {
@@ -204,10 +253,9 @@ export default function Feed({
                 src={post.mediaUrl}
                 alt={post.anime}
                 draggable={false}
-                className="h-full w-full object-contain"
+                className="max-h-[62vh] max-w-full object-contain sm:max-h-[65vh] lg:max-h-[68vh]"
               />
             )}
-
           </motion.div>
 
           {/* PREVIOUS */}
@@ -233,7 +281,7 @@ export default function Feed({
 
         {/* POST DETAILS */}
 
-        <article className="border-t px-5 py-10 sm:px-10">
+        <article className="border-t px-5 py-7 sm:px-10 sm:py-8">
 
           {/* MAIN DESCRIPTION */}
 
@@ -243,61 +291,73 @@ export default function Feed({
 
           {/* ANIME + TAGS */}
 
-          <div className="mt-6 flex flex-wrap gap-3">
+          <div className="mt-5 flex flex-wrap gap-3">
 
             <span className="rounded-full border px-4 py-2 text-sm">
               {post.anime}
             </span>
 
-            {post.tags?.map((tag) => (
-              <span
-                key={tag}
-                className="rounded-full border px-4 py-2 text-sm"
-              >
-                [{tag}]
-              </span>
-            ))}
+            {post.tags?.map(
+              (tag) => (
+                <span
+                  key={tag}
+                  className="rounded-full border px-4 py-2 text-sm"
+                >
+                  [{tag}]
+                </span>
+              )
+            )}
 
           </div>
 
           {/* ADDITIONAL DETAILS */}
 
           {thread.length > 0 && (
-            <section className="mt-10 border-t pt-10">
+            <section className="mt-8 border-t pt-8">
 
-              <h2 className="mb-6 text-sm font-semibold">
-                Threads
+              <h2 className="mb-5 text-sm font-semibold">
+                Thread
               </h2>
 
-              <div className="space-y-10">
+              <div className="space-y-8">
 
                 {thread.map(
-                  (item, threadIndex) => (
+                  (
+                    item,
+                    threadIndex
+                  ) => (
                     <div
                       key={`${post._id}-thread-${threadIndex}`}
-                      className="space-y-5"
+                      className="space-y-4"
                     >
 
                       {/* DETAIL MEDIA */}
 
-                      <div className="overflow-hidden bg-white">
+                      <div className="flex w-full items-center justify-center overflow-hidden bg-white">
 
-                        {item.mediaType === 'video' ? (
+                        {item.mediaType ===
+                        'video' ? (
                           <video
-                            src={item.mediaUrl}
+                            src={
+                              item.mediaUrl
+                            }
                             autoPlay
                             muted
                             loop
                             playsInline
                             controls
-                            className="max-h-[70vh] w-full object-contain"
+                            className="max-h-[62vh] w-full object-contain sm:max-h-[65vh] lg:max-h-[68vh]"
                           />
                         ) : (
                           <img
-                            src={item.mediaUrl}
+                            src={
+                              item.mediaUrl
+                            }
                             alt=""
-                            draggable={false}
-                            className="max-h-[70vh] w-full object-contain"
+                            draggable={
+                              false
+                            }
+                            className="max-h-[62vh] max-w-full object-contain sm:max-h-[65vh] lg:max-h-[68vh]"
                           />
                         )}
 
@@ -306,14 +366,17 @@ export default function Feed({
                       {/* DETAIL DESCRIPTION */}
 
                       <p className="max-w-3xl text-base leading-7">
-                        {item.description}
+                        {
+                          item.description
+                        }
                       </p>
 
-                      {/* DIVIDER */}
+                      {/* THREAD DIVIDER */}
 
                       {threadIndex <
-                        thread.length - 1 && (
-                        <div className="border-b pt-5" />
+                        thread.length -
+                          1 && (
+                        <div className="border-b pt-4" />
                       )}
 
                     </div>
@@ -327,33 +390,45 @@ export default function Feed({
 
           {/* AUTHOR */}
 
-          <div
-            className={`flex items-center gap-4 ${
-              thread.length > 0
-                ? 'mt-10 border-t pt-8'
-                : 'mt-8'
-            }`}
-          >
+          {author && (
+            <div
+              className={`flex items-center gap-4 ${
+                thread.length > 0
+                  ? 'mt-8 border-t pt-7'
+                  : 'mt-7'
+              }`}
+            >
 
-            <img
-              src={author.profileImage}
-              alt=""
-              className="h-11 w-11 rounded-full object-cover"
-            />
+              {author.profileImage ? (
+                <img
+                  src={
+                    author.profileImage
+                  }
+                  alt={author.name}
+                  className="h-11 w-11 rounded-full object-cover"
+                />
+              ) : (
+                <div className="flex h-11 w-11 items-center justify-center rounded-full border text-sm font-semibold">
+                  {author.name
+                    ?.charAt(0)
+                    .toUpperCase()}
+                </div>
+              )}
 
             <span className="text-sm">
+  <b>{author.name}</b>
 
-              <b>{author.name}</b>
+  <span className="mx-2 text-neutral-400">
+    ·
+  </span>
 
-              <span className="mx-2 text-neutral-400">
-                ·
-              </span>
+  <span className="text-neutral-500">
+    {formatPostTime(post.createdAt)}
+  </span>
+</span>
 
-              {author.country}
-
-            </span>
-
-          </div>
+            </div>
+          )}
 
         </article>
 
