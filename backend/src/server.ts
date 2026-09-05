@@ -12,93 +12,44 @@ import postRoutes from './routes/posts';
 import profileRoutes from './routes/profiles';
 import discoverRoutes from './routes/discover';
 
-import { downloadVideo } from './controllers/videoDownload';
-
 const app = express();
 
 app.set('trust proxy', 1);
 
 /*
- * =========================================================
  * SECURITY
- * =========================================================
  */
-
 app.use(helmet());
 
 /*
- * =========================================================
  * CORS
- * =========================================================
  */
-
-const allowedOrigins = new Set([
-  env.corsOrigin,
-  env.frontendUrl,
-  'http://localhost:3000',
-]);
-
 app.use(
   cors({
-    origin: (
-      origin,
-      callback
-    ) => {
-      /*
-       * Allow requests with no Origin header.
-       *
-       * This includes things such as:
-       * - Postman
-       * - server-to-server requests
-       */
+    origin: function (origin, callback) {
+      // Allow requests with no origin
       if (!origin) {
-        return callback(
-          null,
-          true
-        );
+        return callback(null, true);
       }
 
-      /*
-       * Allow explicitly configured origins.
-       */
-      if (
-        allowedOrigins.has(
-          origin
-        )
-      ) {
-        return callback(
-          null,
-          true
-        );
+      // Allow localhost during development
+      if (/^http:\/\/localhost:\d+$/.test(origin)) {
+        return callback(null, true);
       }
 
-      /*
-       * During development, allow localhost.
-       */
-      if (
-        env.nodeEnv ===
-        'development' &&
-        /^http:\/\/localhost:\d+$/.test(
-          origin
-        )
-      ) {
-        return callback(
-          null,
-          true
-        );
+      // Allow the configured frontend in production
+      if (origin === env.corsOrigin) {
+        return callback(null, true);
       }
 
-      return callback(
-        new Error(
-          'Not allowed by CORS'
-        )
-      );
+      // Allow all origins in development
+      if (env.nodeEnv === 'development') {
+        return callback(null, true);
+      }
+
+      return callback(new Error('Not allowed by CORS'));
     },
 
-    /*
-     * Required for your authentication
-     * cookie requests.
-     */
     credentials: true,
 
     methods: [
@@ -120,11 +71,8 @@ app.use(
 );
 
 /*
- * =========================================================
  * BODY PARSERS
- * =========================================================
  */
-
 app.use(
   express.json({
     limit: '1mb',
@@ -133,133 +81,61 @@ app.use(
 
 app.use(cookieParser());
 
-/*
- * =========================================================
- * RATE LIMITING
- * =========================================================
- */
 
-if (
-  env.nodeEnv ===
-  'production'
-) {
+/*
+ * RATE LIMITING
+ *
+ * Disabled during development.
+ */
+if (process.env.NODE_ENV === 'production') {
   app.use(
     rateLimit({
-      windowMs:
-        15 * 60 * 1000,
-
+      windowMs: 15 * 60 * 1000,
       max: 300,
-
       standardHeaders: true,
-
       legacyHeaders: false,
     })
   );
 }
 
 /*
- * =========================================================
  * HEALTH CHECK
- * =========================================================
  */
-
-app.get(
-  '/api/health',
-  (_req, res) => {
-    return res.json({
-      ok: true,
-    });
-  }
-);
+app.get('/api/health', (_req, res) => {
+  res.json({
+    ok: true,
+  });
+});
 
 /*
- * =========================================================
- * AUTH ROUTES
- * =========================================================
+ * API ROUTES
+ *
+ * IMPORTANT:
+ *
+ * /api/auth
+ * /api/posts
+ * /api/profiles
  */
-
-app.use(
-  '/api/auth',
-  authRoutes
-);
+app.use('/api/auth', authRoutes);
+app.use('/api/posts', postRoutes);
+app.use('/api/profiles', profileRoutes);
+app.use('/api/discover', discoverRoutes);
 
 /*
- * =========================================================
- * VIDEO DOWNLOAD
- * =========================================================
- *
- * This is registered directly on the Express app so:
- *
- * GET /api/posts/:id/download
- *
- * is guaranteed to reach downloadVideo().
- *
- * It must appear before the generic post route:
- *
- * /api/posts/:slug
- *
- * =========================================================
- */
-
-app.get(
-  '/api/posts/:id/download',
-  downloadVideo
-);
-
-/*
- * =========================================================
- * POST ROUTES
- * =========================================================
- */
-
-app.use(
-  '/api/posts',
-  postRoutes
-);
-
-/*
- * =========================================================
- * PROFILE ROUTES
- * =========================================================
- */
-
-app.use(
-  '/api/profiles',
-  profileRoutes
-);
-
-/*
- * =========================================================
- * DISCOVER ROUTES
- * =========================================================
- */
-
-app.use(
-  '/api/discover',
-  discoverRoutes
-);
-
-/*
- * =========================================================
  * 404 HANDLER
- * =========================================================
+ *
+ * This makes it much easier to see which endpoint
+ * was actually not found.
  */
-
-app.use(
-  (req, res) => {
-    return res.status(404).json({
-      message:
-        `Route not found: ${req.method} ${req.originalUrl}`,
-    });
-  }
-);
+app.use((req, res) => {
+  res.status(404).json({
+    message: `Route not found: ${req.method} ${req.originalUrl}`,
+  });
+});
 
 /*
- * =========================================================
  * ERROR HANDLER
- * =========================================================
  */
-
 app.use(
   (
     err: any,
@@ -267,11 +143,9 @@ app.use(
     res: express.Response,
     _next: express.NextFunction
   ) => {
-    console.error(
-      err
-    );
+    console.error(err);
 
-    return res.status(400).json({
+    res.status(400).json({
       message:
         err?.message ??
         'Request failed.',
@@ -280,11 +154,8 @@ app.use(
 );
 
 /*
- * =========================================================
  * START SERVER
- * =========================================================
  */
-
 connectDb()
   .then(() => {
     app.listen(
@@ -297,14 +168,6 @@ connectDb()
 
         console.log(
           `✅ Profiles API: http://localhost:${env.port}/api/profiles`
-        );
-
-        console.log(
-          `✅ Video download API: http://localhost:${env.port}/api/posts/:id/download`
-        );
-
-        console.log(
-          `✅ CORS origin: ${env.corsOrigin}`
         );
       }
     );
