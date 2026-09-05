@@ -32,49 +32,60 @@ app.use(helmet());
  * =========================================================
  */
 
+const allowedOrigins = new Set([
+  env.corsOrigin,
+  env.frontendUrl,
+  'http://localhost:3000',
+]);
+
 app.use(
   cors({
-    origin: function (
+    origin: (
       origin,
       callback
-    ) {
+    ) => {
       /*
-       * Allow requests with no origin,
-       * such as Postman/server-to-server requests.
+       * Allow requests with no Origin header.
+       *
+       * This includes things such as:
+       * - Postman
+       * - server-to-server requests
        */
       if (!origin) {
-        return callback(null, true);
+        return callback(
+          null,
+          true
+        );
       }
 
       /*
-       * Allow localhost during development.
+       * Allow explicitly configured origins.
        */
       if (
+        allowedOrigins.has(
+          origin
+        )
+      ) {
+        return callback(
+          null,
+          true
+        );
+      }
+
+      /*
+       * During development, allow localhost.
+       */
+      if (
+        env.nodeEnv ===
+        'development' &&
         /^http:\/\/localhost:\d+$/.test(
           origin
         )
       ) {
-        return callback(null, true);
-      }
-
-      /*
-       * Allow the configured frontend
-       * in production.
-       */
-      if (
-        origin === env.corsOrigin
-      ) {
-        return callback(null, true);
-      }
-
-      /*
-       * Allow all origins in development.
-       */
-      if (
-        env.nodeEnv ===
-        'development'
-      ) {
-        return callback(null, true);
+        return callback(
+          null,
+          true
+        );
       }
 
       return callback(
@@ -84,6 +95,10 @@ app.use(
       );
     },
 
+    /*
+     * Required for your authentication
+     * cookie requests.
+     */
     credentials: true,
 
     methods: [
@@ -151,7 +166,7 @@ if (
 app.get(
   '/api/health',
   (_req, res) => {
-    res.json({
+    return res.json({
       ok: true,
     });
   }
@@ -159,7 +174,7 @@ app.get(
 
 /*
  * =========================================================
- * API ROUTES
+ * AUTH ROUTES
  * =========================================================
  */
 
@@ -169,32 +184,55 @@ app.use(
 );
 
 /*
- * IMPORTANT:
+ * =========================================================
+ * VIDEO DOWNLOAD
+ * =========================================================
  *
- * Register the video download endpoint
- * directly on the app BEFORE the general
- * /api/posts router.
- *
- * This guarantees:
+ * This is registered directly on the Express app so:
  *
  * GET /api/posts/:id/download
  *
- * reaches downloadVideo().
+ * is guaranteed to reach downloadVideo().
+ *
+ * It must appear before the generic post route:
+ *
+ * /api/posts/:slug
+ *
+ * =========================================================
  */
+
 app.get(
   '/api/posts/:id/download',
   downloadVideo
 );
+
+/*
+ * =========================================================
+ * POST ROUTES
+ * =========================================================
+ */
 
 app.use(
   '/api/posts',
   postRoutes
 );
 
+/*
+ * =========================================================
+ * PROFILE ROUTES
+ * =========================================================
+ */
+
 app.use(
   '/api/profiles',
   profileRoutes
 );
+
+/*
+ * =========================================================
+ * DISCOVER ROUTES
+ * =========================================================
+ */
 
 app.use(
   '/api/discover',
@@ -209,7 +247,7 @@ app.use(
 
 app.use(
   (req, res) => {
-    res.status(404).json({
+    return res.status(404).json({
       message:
         `Route not found: ${req.method} ${req.originalUrl}`,
     });
@@ -233,7 +271,7 @@ app.use(
       err
     );
 
-    res.status(400).json({
+    return res.status(400).json({
       message:
         err?.message ??
         'Request failed.',
@@ -263,6 +301,10 @@ connectDb()
 
         console.log(
           `✅ Video download API: http://localhost:${env.port}/api/posts/:id/download`
+        );
+
+        console.log(
+          `✅ CORS origin: ${env.corsOrigin}`
         );
       }
     );
