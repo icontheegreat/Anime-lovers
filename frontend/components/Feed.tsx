@@ -1,23 +1,29 @@
 'use client';
 
 import Link from 'next/link';
+
 import {
   motion,
   useMotionValue,
   useTransform,
   PanInfo,
 } from 'framer-motion';
+
 import {
   useCallback,
   useEffect,
   useRef,
   useState,
 } from 'react';
+
 import { api } from '../lib/api';
+
 import {
   Post,
   ThreadItem,
 } from '../types';
+
+import DownloadVideoButton from './DownloadVideoButton';
 
 const threshold = 110;
 
@@ -31,6 +37,7 @@ export default function Feed({
   );
 
   const [index, setIndex] = useState(0);
+
   const [cursor, setCursor] =
     useState<string | null>(null);
 
@@ -45,31 +52,45 @@ export default function Feed({
     [-8, 8]
   );
 
-  function formatPostTime(dateString: string) {
-    const created = new Date(dateString);
-    const now = new Date();
+  const videoRef =
+    useRef<HTMLVideoElement>(null);
+
+  function formatPostTime(
+    dateString: string
+  ) {
+    const created =
+      new Date(dateString);
+
+    const now =
+      new Date();
 
     const seconds = Math.floor(
-      (now.getTime() - created.getTime()) / 1000
+      (
+        now.getTime() -
+        created.getTime()
+      ) / 1000
     );
 
     if (seconds < 60) {
       return 'Just now';
     }
 
-    const minutes = Math.floor(seconds / 60);
+    const minutes =
+      Math.floor(seconds / 60);
 
     if (minutes < 60) {
       return `${minutes}m ago`;
     }
 
-    const hours = Math.floor(minutes / 60);
+    const hours =
+      Math.floor(minutes / 60);
 
     if (hours < 24) {
       return `${hours}h ago`;
     }
 
-    const days = Math.floor(hours / 24);
+    const days =
+      Math.floor(hours / 24);
 
     if (days < 7) {
       return `${days}d ago`;
@@ -78,52 +99,63 @@ export default function Feed({
     return created.toLocaleDateString();
   }
 
-  const videoRef =
-    useRef<HTMLVideoElement>(null);
+  const load = useCallback(
+    async () => {
+      if (loading) return;
 
-  const load = useCallback(async () => {
-    if (loading) return;
+      setLoading(true);
 
-    setLoading(true);
+      try {
+        const q = cursor
+          ? `?limit=8&cursor=${encodeURIComponent(
+              cursor
+            )}`
+          : '?limit=8';
 
-    try {
-      const q = cursor
-        ? `?limit=8&cursor=${encodeURIComponent(
-            cursor
-          )}`
-        : '?limit=8';
+        const data =
+          await api('/posts' + q);
 
-      const data = await api(
-        '/posts' + q
-      );
+        setPosts(
+          (currentPosts) => {
+            const seen =
+              new Set(
+                currentPosts.map(
+                  (post) =>
+                    post._id
+                )
+              );
 
-      setPosts((currentPosts) => {
-        const seen = new Set(
-          currentPosts.map(
-            (post) => post._id
-          )
+            return [
+              ...currentPosts,
+
+              ...data.posts.filter(
+                (post: Post) =>
+                  !seen.has(
+                    post._id
+                  )
+              ),
+            ];
+          }
         );
 
-        return [
-          ...currentPosts,
-          ...data.posts.filter(
-            (post: Post) =>
-              !seen.has(post._id)
-          ),
-        ];
-      });
-
-      setCursor(data.nextCursor);
-    } finally {
-      setLoading(false);
-    }
-  }, [cursor, loading]);
+        setCursor(
+          data.nextCursor
+        );
+      } finally {
+        setLoading(false);
+      }
+    },
+    [cursor, loading]
+  );
 
   useEffect(() => {
     if (!posts.length) {
       load();
     }
-  }, [posts.length, load]);
+  }, [
+    posts.length,
+    load,
+  ]);
 
   useEffect(() => {
     if (
@@ -139,8 +171,11 @@ export default function Feed({
     load,
   ]);
 
-  const move = (dir: number) => {
-    const next = index + dir;
+  const move = (
+    dir: number
+  ) => {
+    const next =
+      index + dir;
 
     if (
       next >= 0 &&
@@ -164,11 +199,13 @@ export default function Feed({
     info: PanInfo
   ) => {
     if (
-      info.offset.x < -threshold
+      info.offset.x <
+      -threshold
     ) {
       move(1);
     } else if (
-      info.offset.x > threshold
+      info.offset.x >
+      threshold
     ) {
       move(-1);
     } else {
@@ -184,10 +221,12 @@ export default function Feed({
     );
   }
 
-  const post = posts[index];
+  const post =
+    posts[index];
 
   const author =
-    typeof post.authorId === 'object' &&
+    typeof post.authorId ===
+      'object' &&
     post.authorId !== null
       ? post.authorId
       : null;
@@ -200,7 +239,9 @@ export default function Feed({
 
       <section className="mx-auto flex w-full max-w-5xl flex-col">
 
+        {/* ================================================= */}
         {/* MAIN MEDIA */}
+        {/* ================================================= */}
 
         <div className="relative flex w-full items-center justify-center overflow-hidden bg-white px-2">
 
@@ -216,30 +257,35 @@ export default function Feed({
               x,
               rotate,
             }}
-            onDragEnd={dragEnd}
+            onDragEnd={
+              dragEnd
+            }
             className="media-shell flex w-full max-w-5xl touch-pan-y select-none items-center justify-center"
           >
-            {post.mediaType === 'video' ? (
+
+            {post.mediaType ===
+            'video' ? (
               <div className="relative flex w-full items-center justify-center">
 
-               <video
-  ref={videoRef}
-  src={post.mediaUrl}
-  autoPlay
-  loop
-  playsInline
-  controls
-  className="max-h-[62vh] w-full object-contain sm:max-h-[65vh] lg:max-h-[68vh]"
-/>
+                <video
+                  ref={videoRef}
+                  src={post.mediaUrl}
+                  autoPlay
+                  loop
+                  playsInline
+                  controls
+                  className="max-h-[62vh] w-full object-contain sm:max-h-[65vh] lg:max-h-[68vh]"
+                />
 
                 <button
+                  type="button"
                   aria-label="Pause or play"
                   onClick={() => {
                     if (
                       videoRef.current
                         ?.paused
                     ) {
-                      videoRef.current?.play();
+                      void videoRef.current.play();
                     } else {
                       videoRef.current?.pause();
                     }
@@ -252,28 +298,45 @@ export default function Feed({
               </div>
             ) : (
               <img
-                src={post.mediaUrl}
+                src={
+                  post.mediaUrl
+                }
                 alt={post.anime}
                 draggable={false}
                 className="max-h-[62vh] max-w-full object-contain sm:max-h-[65vh] lg:max-h-[68vh]"
               />
             )}
+
           </motion.div>
 
+          {/* ================================================= */}
           {/* PREVIOUS */}
+          {/* ================================================= */}
 
           <button
-            onClick={() => move(-1)}
-            disabled={index === 0}
+            type="button"
+            onClick={() =>
+              move(-1)
+            }
+            disabled={
+              index === 0
+            }
+            aria-label="Previous post"
             className="absolute left-3 rounded-full border bg-white px-4 py-2 text-sm shadow-sm disabled:opacity-30"
           >
             ←
           </button>
 
+          {/* ================================================= */}
           {/* NEXT */}
+          {/* ================================================= */}
 
           <button
-            onClick={() => move(1)}
+            type="button"
+            onClick={() =>
+              move(1)
+            }
+            aria-label="Next post"
             className="absolute right-3 rounded-full border bg-white px-4 py-2 text-sm shadow-sm"
           >
             →
@@ -281,7 +344,9 @@ export default function Feed({
 
         </div>
 
+        {/* ================================================= */}
         {/* POST DETAILS */}
+        {/* ================================================= */}
 
         <article className="border-t px-5 py-7 sm:px-10 sm:py-8">
 
@@ -290,6 +355,15 @@ export default function Feed({
           <p className="max-w-3xl text-base leading-7">
             {post.description}
           </p>
+
+          {/* DOWNLOAD VIDEO */}
+
+          {post.mediaType ===
+            'video' && (
+            <DownloadVideoButton
+              postId={post._id}
+            />
+          )}
 
           {/* ANIME + TAGS */}
 
@@ -312,7 +386,9 @@ export default function Feed({
 
           </div>
 
-          {/* ADDITIONAL DETAILS */}
+          {/* ================================================= */}
+          {/* ADDITIONAL DETAILS / THREAD */}
+          {/* ================================================= */}
 
           {thread.length > 0 && (
             <section className="mt-8 border-t pt-8">
@@ -390,48 +466,64 @@ export default function Feed({
             </section>
           )}
 
+          {/* ================================================= */}
           {/* AUTHOR */}
+          {/* ================================================= */}
 
-         {author && (
-  <div
-    className={`relative z-10 flex items-center ${
-      thread.length > 0
-        ? 'mt-8 border-t pt-7'
-        : 'mt-7'
-    }`}
-  >
-    <Link
-      href={`/profile/${author._id}`}
-      className="flex items-center gap-4 rounded-lg p-1 transition-opacity hover:opacity-75"
-    >
-      {author.profileImage ? (
-        <img
-          src={author.profileImage}
-          alt={author.name}
-          className="h-11 w-11 rounded-full object-cover"
-        />
-      ) : (
-        <div className="flex h-11 w-11 items-center justify-center rounded-full border text-sm font-semibold">
-          {author.name
-            ?.charAt(0)
-            .toUpperCase()}
-        </div>
-      )}
+          {author && (
+            <div
+              className={`relative z-10 flex items-center ${
+                thread.length > 0
+                  ? 'mt-8 border-t pt-7'
+                  : 'mt-7'
+              }`}
+            >
 
-      <span className="text-sm">
-        <b>{author.name}</b>
+              <Link
+                href={`/profile/${author._id}`}
+                className="flex items-center gap-4 rounded-lg p-1 transition-opacity hover:opacity-75"
+              >
 
-        <span className="mx-2 text-neutral-400">
-          ·
-        </span>
+                {author.profileImage ? (
+                  <img
+                    src={
+                      author.profileImage
+                    }
+                    alt={
+                      author.name
+                    }
+                    className="h-11 w-11 rounded-full object-cover"
+                  />
+                ) : (
+                  <div className="flex h-11 w-11 items-center justify-center rounded-full border text-sm font-semibold">
+                    {author.name
+                      ?.charAt(0)
+                      .toUpperCase()}
+                  </div>
+                )}
 
-        <span className="text-neutral-500">
-          {formatPostTime(post.createdAt)}
-        </span>
-      </span>
-    </Link>
-  </div>
-)}
+                <span className="text-sm">
+
+                  <b>
+                    {author.name}
+                  </b>
+
+                  <span className="mx-2 text-neutral-400">
+                    ·
+                  </span>
+
+                  <span className="text-neutral-500">
+                    {formatPostTime(
+                      post.createdAt
+                    )}
+                  </span>
+
+                </span>
+
+              </Link>
+
+            </div>
+          )}
 
         </article>
 
