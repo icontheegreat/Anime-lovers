@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import {
   motion,
   useMotionValue,
@@ -15,7 +16,6 @@ import {
 import { api } from '../lib/api';
 import {
   Post,
-  Author,
   ThreadItem,
 } from '../types';
 
@@ -33,6 +33,7 @@ export default function Feed({
   const [index, setIndex] = useState(0);
   const [cursor, setCursor] =
     useState<string | null>(null);
+
   const [loading, setLoading] =
     useState(false);
 
@@ -43,38 +44,39 @@ export default function Feed({
     [-250, 250],
     [-8, 8]
   );
-function formatPostTime(dateString: string) {
-  const created = new Date(dateString);
-  const now = new Date();
 
-  const seconds = Math.floor(
-    (now.getTime() - created.getTime()) / 1000
-  );
+  function formatPostTime(dateString: string) {
+    const created = new Date(dateString);
+    const now = new Date();
 
-  if (seconds < 60) {
-    return 'Just now';
+    const seconds = Math.floor(
+      (now.getTime() - created.getTime()) / 1000
+    );
+
+    if (seconds < 60) {
+      return 'Just now';
+    }
+
+    const minutes = Math.floor(seconds / 60);
+
+    if (minutes < 60) {
+      return `${minutes}m ago`;
+    }
+
+    const hours = Math.floor(minutes / 60);
+
+    if (hours < 24) {
+      return `${hours}h ago`;
+    }
+
+    const days = Math.floor(hours / 24);
+
+    if (days < 7) {
+      return `${days}d ago`;
+    }
+
+    return created.toLocaleDateString();
   }
-
-  const minutes = Math.floor(seconds / 60);
-
-  if (minutes < 60) {
-    return `${minutes}m ago`;
-  }
-
-  const hours = Math.floor(minutes / 60);
-
-  if (hours < 24) {
-    return `${hours}h ago`;
-  }
-
-  const days = Math.floor(hours / 24);
-
-  if (days < 7) {
-    return `${days}d ago`;
-  }
-
-  return created.toLocaleDateString();
-}
 
   const videoRef =
     useRef<HTMLVideoElement>(null);
@@ -220,15 +222,15 @@ function formatPostTime(dateString: string) {
             {post.mediaType === 'video' ? (
               <div className="relative flex w-full items-center justify-center">
 
-                <video
-                  ref={videoRef}
-                  src={post.mediaUrl}
-                  autoPlay
-                  muted
-                  loop
-                  playsInline
-                  className="max-h-[62vh] w-full object-contain sm:max-h-[65vh] lg:max-h-[68vh]"
-                />
+               <video
+  ref={videoRef}
+  src={post.mediaUrl}
+  autoPlay
+  loop
+  playsInline
+  controls
+  className="max-h-[62vh] w-full object-contain sm:max-h-[65vh] lg:max-h-[68vh]"
+/>
 
                 <button
                   aria-label="Pause or play"
@@ -390,45 +392,46 @@ function formatPostTime(dateString: string) {
 
           {/* AUTHOR */}
 
-          {author && (
-            <div
-              className={`flex items-center gap-4 ${
-                thread.length > 0
-                  ? 'mt-8 border-t pt-7'
-                  : 'mt-7'
-              }`}
-            >
+         {author && (
+  <div
+    className={`relative z-10 flex items-center ${
+      thread.length > 0
+        ? 'mt-8 border-t pt-7'
+        : 'mt-7'
+    }`}
+  >
+    <Link
+      href={`/profile/${author._id}`}
+      className="flex items-center gap-4 rounded-lg p-1 transition-opacity hover:opacity-75"
+    >
+      {author.profileImage ? (
+        <img
+          src={author.profileImage}
+          alt={author.name}
+          className="h-11 w-11 rounded-full object-cover"
+        />
+      ) : (
+        <div className="flex h-11 w-11 items-center justify-center rounded-full border text-sm font-semibold">
+          {author.name
+            ?.charAt(0)
+            .toUpperCase()}
+        </div>
+      )}
 
-              {author.profileImage ? (
-                <img
-                  src={
-                    author.profileImage
-                  }
-                  alt={author.name}
-                  className="h-11 w-11 rounded-full object-cover"
-                />
-              ) : (
-                <div className="flex h-11 w-11 items-center justify-center rounded-full border text-sm font-semibold">
-                  {author.name
-                    ?.charAt(0)
-                    .toUpperCase()}
-                </div>
-              )}
+      <span className="text-sm">
+        <b>{author.name}</b>
 
-            <span className="text-sm">
-  <b>{author.name}</b>
+        <span className="mx-2 text-neutral-400">
+          ·
+        </span>
 
-  <span className="mx-2 text-neutral-400">
-    ·
-  </span>
-
-  <span className="text-neutral-500">
-    {formatPostTime(post.createdAt)}
-  </span>
-</span>
-
-            </div>
-          )}
+        <span className="text-neutral-500">
+          {formatPostTime(post.createdAt)}
+        </span>
+      </span>
+    </Link>
+  </div>
+)}
 
         </article>
 
