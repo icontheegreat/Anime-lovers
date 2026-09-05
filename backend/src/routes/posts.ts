@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { upload } from '../middleware/upload';
 import { requireAuth } from '../middleware/auth';
-
+import { downloadVideo } from '../controllers/videoDownload';
 import {
   createPost,
   listPosts,
@@ -11,13 +11,21 @@ import {
   myPosts
 } from '../controllers/posts';
 
+
 const r = Router();
 
 r.get('/', listPosts);
 
 r.get('/mine', requireAuth, myPosts);
 
+r.get(
+  '/:id/download',
+  downloadVideo
+);
+
+
 r.get('/:slug', getPost);
+
 
 r.post(
   '/',
