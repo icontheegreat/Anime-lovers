@@ -12,42 +12,76 @@ import postRoutes from './routes/posts';
 import profileRoutes from './routes/profiles';
 import discoverRoutes from './routes/discover';
 
+import { downloadVideo } from './controllers/videoDownload';
+
 const app = express();
 
 app.set('trust proxy', 1);
 
 /*
+ * =========================================================
  * SECURITY
+ * =========================================================
  */
+
 app.use(helmet());
 
 /*
+ * =========================================================
  * CORS
+ * =========================================================
  */
+
 app.use(
   cors({
-    origin: function (origin, callback) {
-      // Allow requests with no origin
+    origin: function (
+      origin,
+      callback
+    ) {
+      /*
+       * Allow requests with no origin,
+       * such as Postman/server-to-server requests.
+       */
       if (!origin) {
         return callback(null, true);
       }
 
-      // Allow localhost during development
-      if (/^http:\/\/localhost:\d+$/.test(origin)) {
+      /*
+       * Allow localhost during development.
+       */
+      if (
+        /^http:\/\/localhost:\d+$/.test(
+          origin
+        )
+      ) {
         return callback(null, true);
       }
 
-      // Allow the configured frontend in production
-      if (origin === env.corsOrigin) {
+      /*
+       * Allow the configured frontend
+       * in production.
+       */
+      if (
+        origin === env.corsOrigin
+      ) {
         return callback(null, true);
       }
 
-      // Allow all origins in development
-      if (env.nodeEnv === 'development') {
+      /*
+       * Allow all origins in development.
+       */
+      if (
+        env.nodeEnv ===
+        'development'
+      ) {
         return callback(null, true);
       }
 
-      return callback(new Error('Not allowed by CORS'));
+      return callback(
+        new Error(
+          'Not allowed by CORS'
+        )
+      );
     },
 
     credentials: true,
@@ -71,8 +105,11 @@ app.use(
 );
 
 /*
+ * =========================================================
  * BODY PARSERS
+ * =========================================================
  */
+
 app.use(
   express.json({
     limit: '1mb',
@@ -81,61 +118,110 @@ app.use(
 
 app.use(cookieParser());
 
-
 /*
+ * =========================================================
  * RATE LIMITING
- *
- * Disabled during development.
+ * =========================================================
  */
-if (process.env.NODE_ENV === 'production') {
+
+if (
+  env.nodeEnv ===
+  'production'
+) {
   app.use(
     rateLimit({
-      windowMs: 15 * 60 * 1000,
+      windowMs:
+        15 * 60 * 1000,
+
       max: 300,
+
       standardHeaders: true,
+
       legacyHeaders: false,
     })
   );
 }
 
 /*
+ * =========================================================
  * HEALTH CHECK
+ * =========================================================
  */
-app.get('/api/health', (_req, res) => {
-  res.json({
-    ok: true,
-  });
-});
+
+app.get(
+  '/api/health',
+  (_req, res) => {
+    res.json({
+      ok: true,
+    });
+  }
+);
 
 /*
+ * =========================================================
  * API ROUTES
- *
+ * =========================================================
+ */
+
+app.use(
+  '/api/auth',
+  authRoutes
+);
+
+/*
  * IMPORTANT:
  *
- * /api/auth
- * /api/posts
- * /api/profiles
- */
-app.use('/api/auth', authRoutes);
-app.use('/api/posts', postRoutes);
-app.use('/api/profiles', profileRoutes);
-app.use('/api/discover', discoverRoutes);
-
-/*
- * 404 HANDLER
+ * Register the video download endpoint
+ * directly on the app BEFORE the general
+ * /api/posts router.
  *
- * This makes it much easier to see which endpoint
- * was actually not found.
+ * This guarantees:
+ *
+ * GET /api/posts/:id/download
+ *
+ * reaches downloadVideo().
  */
-app.use((req, res) => {
-  res.status(404).json({
-    message: `Route not found: ${req.method} ${req.originalUrl}`,
-  });
-});
+app.get(
+  '/api/posts/:id/download',
+  downloadVideo
+);
+
+app.use(
+  '/api/posts',
+  postRoutes
+);
+
+app.use(
+  '/api/profiles',
+  profileRoutes
+);
+
+app.use(
+  '/api/discover',
+  discoverRoutes
+);
 
 /*
- * ERROR HANDLER
+ * =========================================================
+ * 404 HANDLER
+ * =========================================================
  */
+
+app.use(
+  (req, res) => {
+    res.status(404).json({
+      message:
+        `Route not found: ${req.method} ${req.originalUrl}`,
+    });
+  }
+);
+
+/*
+ * =========================================================
+ * ERROR HANDLER
+ * =========================================================
+ */
+
 app.use(
   (
     err: any,
@@ -143,7 +229,9 @@ app.use(
     res: express.Response,
     _next: express.NextFunction
   ) => {
-    console.error(err);
+    console.error(
+      err
+    );
 
     res.status(400).json({
       message:
@@ -154,8 +242,11 @@ app.use(
 );
 
 /*
+ * =========================================================
  * START SERVER
+ * =========================================================
  */
+
 connectDb()
   .then(() => {
     app.listen(
@@ -168,6 +259,10 @@ connectDb()
 
         console.log(
           `✅ Profiles API: http://localhost:${env.port}/api/profiles`
+        );
+
+        console.log(
+          `✅ Video download API: http://localhost:${env.port}/api/posts/:id/download`
         );
       }
     );
