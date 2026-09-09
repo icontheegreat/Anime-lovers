@@ -1,6 +1,8 @@
 import { Response } from 'express';
 
 import { Post } from '../models/Post';
+import { Author } from '../models/Author';
+
 import { AuthRequest } from '../middleware/auth';
 import { env } from '../config/env';
 
@@ -36,6 +38,10 @@ type DiscoverData = {
     count: number;
   }[];
 
+  popularAnime: {
+    name: string;
+  }[];
+
   anime: DiscoverAnime[];
 
   youtube: {
@@ -52,6 +58,12 @@ type DiscoverData = {
     link: string;
     source: string;
     pubDate: string;
+  }[];
+
+  popularAuthors: {
+    _id: string;
+    name: string;
+    profileImage: string | null;
   }[];
 };
 
@@ -427,9 +439,11 @@ export async function discover(
       );
 
     /*
-     * Find the anime most discussed
-     * by your users in the last 24 hours.
+     * =======================================================
+     * RECENTLY TALKED ABOUT
+     * =======================================================
      */
+
     const recentlyTalked =
       await Post.aggregate([
         {
@@ -484,16 +498,163 @@ export async function discover(
       ]);
 
     /*
-     * These topics power the external sources.
+     * =======================================================
+     * POPULAR ANIME
+     *
+     * All community posts.
+     *
+     * Sorted by number of posts.
+     *
+     * Only the anime name is returned.
+     * =======================================================
      */
+
+    const popularAnime =
+      await Post.aggregate([
+        {
+          $match: {
+            deletedAt: null,
+            anime: {
+              $exists: true,
+              $ne: '',
+            },
+          },
+        },
+
+        {
+          $group: {
+            _id: {
+              $toLower: '$anime',
+            },
+
+            name: {
+              $first: '$anime',
+            },
+
+            count: {
+              $sum: 1,
+            },
+          },
+        },
+
+        {
+          $sort: {
+            count: -1,
+            name: 1,
+          },
+        },
+
+        {
+          $limit: 10,
+        },
+
+        {
+          $project: {
+            _id: 0,
+            name: 1,
+          },
+        },
+      ]);
+
+    /*
+     * =======================================================
+     * POPULAR AUTHORS
+     *
+     * Authors with the most posts.
+     *
+     * Only:
+     *   _id
+     *   name
+     *   profileImage
+     *
+     * are returned.
+     * =======================================================
+     */
+
+    const popularAuthors =
+      await Post.aggregate([
+        {
+          $match: {
+            deletedAt: null,
+
+            authorId: {
+              $exists: true,
+              $ne: null,
+            },
+          },
+        },
+
+        {
+          $group: {
+            _id: '$authorId',
+
+            count: {
+              $sum: 1,
+            },
+          },
+        },
+
+        {
+          $sort: {
+            count: -1,
+          },
+        },
+
+        {
+          $limit: 10,
+        },
+
+        {
+          $lookup: {
+            from: Author.collection.name,
+
+            localField: '_id',
+
+            foreignField: '_id',
+
+            as: 'author',
+          },
+        },
+
+        {
+          $unwind: '$author',
+        },
+
+        {
+          $project: {
+            _id: {
+              $toString: '$author._id',
+            },
+
+            name: '$author.name',
+
+            profileImage: {
+              $ifNull: [
+                '$author.profileImage',
+                null,
+              ],
+            },
+          },
+        },
+      ]);
+
+    /*
+     * =======================================================
+     * THESE TOPICS POWER THE EXTERNAL SOURCES
+     * =======================================================
+     */
+
     const topics =
       recentlyTalked.map(
         (item) => item.name
       );
 
     /*
-     * AniList.
+     * =======================================================
+     * ANILIST
+     * =======================================================
      */
+
     const animeResults =
       await Promise.all(
         topics
@@ -519,15 +680,20 @@ export async function discover(
       );
 
     /*
-     * YouTube + News.
+     * =======================================================
+     * YOUTUBE + NEWS
+     * =======================================================
      */
+
     const [youtube, news] =
       await Promise.all([
         cached(
           `youtube:${topics
             .join('|')
             .toLowerCase()}`,
+
           5 * 60 * 1000,
+
           () =>
             fetchYouTube(
               topics
@@ -538,7 +704,9 @@ export async function discover(
           `news:${topics
             .join('|')
             .toLowerCase()}`,
+
           5 * 60 * 1000,
+
           () =>
             fetchNews(
               topics
@@ -546,14 +714,23 @@ export async function discover(
         ),
       ]);
 
+    /*
+     * =======================================================
+     * FINAL RESPONSE
+     * =======================================================
+     */
+
     const result: DiscoverData = {
       recentlyTalked,
+      popularAnime,
       anime,
       youtube,
       news,
+      popularAuthors,
     };
 
     return res.json(result);
+
   } catch (error: any) {
     console.error(
       'Discover error:',
