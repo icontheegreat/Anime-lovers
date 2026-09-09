@@ -544,11 +544,11 @@ export default function Feed({
         {/* POST DETAILS */}
         {/* ================================================= */}
 
-        <article className="border-t border-black/10 px-5 py-7 sm:px-10 sm:py-8 dark:border-white/10">
+        <article className="border-t border-black/10 px-5 py-7 text-black sm:px-10 sm:py-8 dark:border-white/10 dark:text-white">
 
           {/* MAIN DESCRIPTION */}
 
-          <p className="max-w-3xl text-base leading-7">
+          <p className="max-w-3xl text-base leading-7 text-black dark:text-white">
             {post.description}
           </p>
 
@@ -563,11 +563,11 @@ export default function Feed({
 
           {/* ANIME + TAGS */}
 
-          <div className="mt-5 flex flex-wrap gap-3">
+          <div className="mt-5 flex flex-wrap gap-3 text-black dark:text-white">
 
-            <span className="rounded-full border border-black/15 px-4 py-2 text-sm dark:border-white/15">
+            <span className="rounded-full border border-black/15 px-4 py-2 text-sm text-black dark:border-white/15 dark:text-white">
               <span className="font-medium">
-                Anime Name:
+                Name:
               </span>{' '}
               {post.anime}
             </span>
@@ -576,7 +576,7 @@ export default function Feed({
               (tag) => (
                 <span
                   key={tag}
-                  className="rounded-full border border-black/15 px-4 py-2 text-sm dark:border-white/15"
+                  className="rounded-full border border-black/15 px-4 py-2 text-sm text-black dark:border-white/15 dark:text-white"
                 >
                   [{tag}]
                 </span>
@@ -590,9 +590,9 @@ export default function Feed({
           {/* ================================================= */}
 
           {thread.length > 0 && (
-            <section className="mt-8 border-t border-black/10 pt-8 dark:border-white/10">
+            <section className="mt-8 border-t border-black/10 pt-8 text-black dark:border-white/10 dark:text-white">
 
-              <h2 className="mb-5 text-sm font-semibold">
+              <h2 className="mb-5 text-sm font-semibold text-black dark:text-white">
                 Thread
               </h2>
 
@@ -642,7 +642,7 @@ export default function Feed({
 
                       {/* DETAIL DESCRIPTION */}
 
-                      <p className="max-w-3xl text-base leading-7">
+                      <p className="max-w-3xl text-base leading-7 text-black dark:text-white">
                         {
                           item.description
                         }
@@ -680,7 +680,7 @@ export default function Feed({
 
               <Link
                 href={`/profile/${author._id}`}
-                className="flex items-center gap-4 rounded-lg p-1 transition-opacity hover:opacity-75"
+                className="flex items-center gap-4 rounded-lg p-1 text-black transition-opacity hover:opacity-75 dark:text-white"
               >
 
                 {author.profileImage ? (
@@ -694,24 +694,24 @@ export default function Feed({
                     className="h-11 w-11 rounded-full object-cover"
                   />
                 ) : (
-                  <div className="flex h-11 w-11 items-center justify-center rounded-full border border-black/15 text-sm font-semibold dark:border-white/15">
+                  <div className="flex h-11 w-11 items-center justify-center rounded-full border border-black/15 text-sm font-semibold text-black dark:border-white/15 dark:text-white">
                     {author.name
                       ?.charAt(0)
                       .toUpperCase()}
                   </div>
                 )}
 
-                <span className="text-sm">
+                <span className="text-sm text-black dark:text-white">
 
                   <b>
                     {author.name}
                   </b>
 
-                  <span className="mx-2 opacity-40">
+                  <span className="mx-2 text-black dark:text-white">
                     ·
                   </span>
 
-                  <span className="opacity-50">
+                  <span className="text-black dark:text-white">
                     {formatPostTime(
                       post.createdAt
                     )}
