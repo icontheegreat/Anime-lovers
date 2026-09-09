@@ -12,6 +12,7 @@ import {
 import {
   useCallback,
   useEffect,
+  useMemo,
   useRef,
   useState,
 } from 'react';
@@ -26,6 +27,11 @@ import {
 import DownloadVideoButton from './DownloadVideoButton';
 
 const threshold = 110;
+
+type SortOption =
+  | 'alphabetical'
+  | 'recent'
+  | 'relevant';
 
 export default function Feed({
   initialPost,
@@ -43,6 +49,9 @@ export default function Feed({
 
   const [loading, setLoading] =
     useState(false);
+
+  const [sortOption, setSortOption] =
+    useState<SortOption>('recent');
 
   const x = useMotionValue(0);
 
@@ -157,15 +166,197 @@ export default function Feed({
     load,
   ]);
 
+  /*
+   * Listen for the sorting selection
+   * made from the Header bookmark menu.
+   */
+  useEffect(() => {
+    function handleSortChange(
+      event: Event
+    ) {
+      const customEvent =
+        event as CustomEvent<SortOption>;
+
+      if (
+        customEvent.detail ===
+          'alphabetical' ||
+        customEvent.detail ===
+          'recent' ||
+        customEvent.detail ===
+          'relevant'
+      ) {
+        setSortOption(
+          customEvent.detail
+        );
+
+        setIndex(0);
+        x.set(0);
+      }
+    }
+
+    window.addEventListener(
+      'feed-sort-change',
+      handleSortChange
+    );
+
+    return () => {
+      window.removeEventListener(
+        'feed-sort-change',
+        handleSortChange
+      );
+    };
+  }, [x]);
+
+  /*
+   * Sorting only affects posts that
+   * have already been loaded.
+   *
+   * The backend pagination remains
+   * unchanged.
+   */
+  const displayedPosts =
+    useMemo(() => {
+      const sorted = [
+        ...posts,
+      ];
+
+      if (
+        sortOption ===
+        'alphabetical'
+      ) {
+        return sorted.sort(
+          (a, b) =>
+            a.anime
+              .trim()
+              .localeCompare(
+                b.anime.trim(),
+                undefined,
+                {
+                  sensitivity:
+                    'base',
+                }
+              )
+        );
+      }
+
+      if (
+        sortOption ===
+        'relevant'
+      ) {
+        const getScore = (
+          post: Post
+        ) => {
+          /*
+           * Tags are the strongest
+           * relevance signal.
+           */
+          const tagScore =
+            (post.tags?.length ??
+              0) * 10;
+
+          /*
+           * Having an anime title
+           * contributes to relevance.
+           */
+          const animeScore =
+            post.anime?.trim()
+              ? 15
+              : 0;
+
+          /*
+           * Newer posts receive a
+           * secondary recency boost.
+           */
+          const createdTime =
+            new Date(
+              post.createdAt
+            ).getTime();
+
+          const ageInDays =
+            Math.max(
+              0,
+              (
+                Date.now() -
+                createdTime
+              ) /
+                (
+                  1000 *
+                  60 *
+                  60 *
+                  24
+                )
+            );
+
+          const recencyScore =
+            Math.max(
+              0,
+              10 - ageInDays
+            );
+
+          return (
+            tagScore +
+            animeScore +
+            recencyScore
+          );
+        };
+
+        return sorted.sort(
+          (a, b) => {
+            const scoreDifference =
+              getScore(b) -
+              getScore(a);
+
+            if (
+              scoreDifference !==
+              0
+            ) {
+              return scoreDifference;
+            }
+
+            return (
+              new Date(
+                b.createdAt
+              ).getTime() -
+              new Date(
+                a.createdAt
+              ).getTime()
+            );
+          }
+        );
+      }
+
+      /*
+       * Recently Posted
+       */
+      return sorted.sort(
+        (a, b) =>
+          new Date(
+            b.createdAt
+          ).getTime() -
+          new Date(
+            a.createdAt
+          ).getTime()
+      );
+    }, [
+      posts,
+      sortOption,
+    ]);
+
+  /*
+   * Continue loading more posts
+   * as the user approaches the end.
+   */
   useEffect(() => {
     if (
-      posts.length - index <= 3 &&
+      displayedPosts.length -
+        index <=
+        3 &&
       cursor
     ) {
       load();
     }
   }, [
-    posts.length,
+    displayedPosts.length,
     index,
     cursor,
     load,
@@ -179,12 +370,13 @@ export default function Feed({
 
     if (
       next >= 0 &&
-      next < posts.length
+      next < displayedPosts.length
     ) {
       setIndex(next);
       x.set(0);
     } else if (
-      next >= posts.length &&
+      next >=
+        displayedPosts.length &&
       cursor
     ) {
       load();
@@ -215,14 +407,18 @@ export default function Feed({
 
   if (!posts.length) {
     return (
-      <main className="flex min-h-screen items-center justify-center text-sm text-neutral-500">
+      <main className="flex min-h-screen items-center justify-center bg-white text-sm text-black dark:bg-black dark:text-white">
         No posts yet.
       </main>
     );
   }
 
   const post =
-    posts[index];
+    displayedPosts[index];
+
+  if (!post) {
+    return null;
+  }
 
   const author =
     typeof post.authorId ===
@@ -235,7 +431,7 @@ export default function Feed({
     post.thread ?? [];
 
   return (
-    <main className="min-h-screen bg-white pb-20 pt-14">
+    <main className="min-h-screen bg-white pb-20 pt-14 text-black dark:bg-black dark:text-white">
 
       <section className="mx-auto flex w-full max-w-5xl flex-col">
 
@@ -243,7 +439,7 @@ export default function Feed({
         {/* MAIN MEDIA */}
         {/* ================================================= */}
 
-        <div className="relative flex w-full items-center justify-center overflow-hidden bg-white px-2">
+        <div className="relative flex w-full items-center justify-center overflow-hidden bg-white px-2 dark:bg-black">
 
           <motion.div
             key={post._id}
@@ -290,7 +486,7 @@ export default function Feed({
                       videoRef.current?.pause();
                     }
                   }}
-                  className="absolute bottom-5 right-5 rounded-full border border-black/15 bg-white/90 px-4 py-2 text-xs"
+                  className="absolute bottom-5 right-5 rounded-full border border-black/15 bg-white/90 px-4 py-2 text-xs text-black dark:border-white/15 dark:bg-black/90 dark:text-white"
                 >
                   Pause / Play
                 </button>
@@ -322,7 +518,7 @@ export default function Feed({
               index === 0
             }
             aria-label="Previous post"
-            className="absolute left-3 rounded-full border bg-white px-4 py-2 text-sm shadow-sm disabled:opacity-30"
+            className="absolute left-3 rounded-full border border-black/15 bg-white px-4 py-2 text-sm text-black shadow-sm disabled:opacity-30 dark:border-white/15 dark:bg-black dark:text-white"
           >
             ←
           </button>
@@ -337,7 +533,7 @@ export default function Feed({
               move(1)
             }
             aria-label="Next post"
-            className="absolute right-3 rounded-full border bg-white px-4 py-2 text-sm shadow-sm"
+            className="absolute right-3 rounded-full border border-black/15 bg-white px-4 py-2 text-sm text-black shadow-sm dark:border-white/15 dark:bg-black dark:text-white"
           >
             →
           </button>
@@ -348,7 +544,7 @@ export default function Feed({
         {/* POST DETAILS */}
         {/* ================================================= */}
 
-        <article className="border-t px-5 py-7 sm:px-10 sm:py-8">
+        <article className="border-t border-black/10 px-5 py-7 sm:px-10 sm:py-8 dark:border-white/10">
 
           {/* MAIN DESCRIPTION */}
 
@@ -369,7 +565,10 @@ export default function Feed({
 
           <div className="mt-5 flex flex-wrap gap-3">
 
-            <span className="rounded-full border px-4 py-2 text-sm">
+            <span className="rounded-full border border-black/15 px-4 py-2 text-sm dark:border-white/15">
+              <span className="font-medium">
+                Anime Name:
+              </span>{' '}
               {post.anime}
             </span>
 
@@ -377,7 +576,7 @@ export default function Feed({
               (tag) => (
                 <span
                   key={tag}
-                  className="rounded-full border px-4 py-2 text-sm"
+                  className="rounded-full border border-black/15 px-4 py-2 text-sm dark:border-white/15"
                 >
                   [{tag}]
                 </span>
@@ -391,7 +590,7 @@ export default function Feed({
           {/* ================================================= */}
 
           {thread.length > 0 && (
-            <section className="mt-8 border-t pt-8">
+            <section className="mt-8 border-t border-black/10 pt-8 dark:border-white/10">
 
               <h2 className="mb-5 text-sm font-semibold">
                 Thread
@@ -411,7 +610,7 @@ export default function Feed({
 
                       {/* DETAIL MEDIA */}
 
-                      <div className="flex w-full items-center justify-center overflow-hidden bg-white">
+                      <div className="flex w-full items-center justify-center overflow-hidden bg-white dark:bg-black">
 
                         {item.mediaType ===
                         'video' ? (
@@ -454,7 +653,7 @@ export default function Feed({
                       {threadIndex <
                         thread.length -
                           1 && (
-                        <div className="border-b pt-4" />
+                        <div className="border-b border-black/10 pt-4 dark:border-white/10" />
                       )}
 
                     </div>
@@ -474,7 +673,7 @@ export default function Feed({
             <div
               className={`relative z-10 flex items-center ${
                 thread.length > 0
-                  ? 'mt-8 border-t pt-7'
+                  ? 'mt-8 border-t border-black/10 pt-7 dark:border-white/10'
                   : 'mt-7'
               }`}
             >
@@ -495,7 +694,7 @@ export default function Feed({
                     className="h-11 w-11 rounded-full object-cover"
                   />
                 ) : (
-                  <div className="flex h-11 w-11 items-center justify-center rounded-full border text-sm font-semibold">
+                  <div className="flex h-11 w-11 items-center justify-center rounded-full border border-black/15 text-sm font-semibold dark:border-white/15">
                     {author.name
                       ?.charAt(0)
                       .toUpperCase()}
@@ -508,11 +707,11 @@ export default function Feed({
                     {author.name}
                   </b>
 
-                  <span className="mx-2 text-neutral-400">
+                  <span className="mx-2 opacity-40">
                     ·
                   </span>
 
-                  <span className="text-neutral-500">
+                  <span className="opacity-50">
                     {formatPostTime(
                       post.createdAt
                     )}

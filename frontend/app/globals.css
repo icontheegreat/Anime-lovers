@@ -11,7 +11,7 @@
 }
 
 html.dark {
-  background: #111827;
+  background: #000000;
   color: #ffffff;
   color-scheme: dark;
 }
@@ -34,7 +34,7 @@ body {
 }
 
 html.dark body {
-  background: #111827;
+  background: #000000;
   color: #ffffff;
 }
 
@@ -61,7 +61,21 @@ a {
 /* ========================================================= */
 
 .app-content {
+
   min-height: 100vh;
+
+  background: #ffffff;
+
+  color: #000000;
+
+}
+
+html.dark .app-content {
+
+  background: #000000;
+
+  color: #ffffff;
+
 }
 
 /* ========================================================= */
@@ -94,8 +108,11 @@ a {
 }
 
 html.dark .top-header {
-  background: rgba(17, 24, 39, 0.94);
+
+  background: #000000;
+
   color: #ffffff;
+
 }
 
 .site-logo {
@@ -176,7 +193,8 @@ html.dark .theme-toggle:hover {
 }
 
 html.dark .bottom-nav {
-  background: rgba(17, 24, 39, 0.96);
+
+  background: #000000;
 
   border-top-color:
     rgba(255, 255, 255, 0.1);
@@ -239,42 +257,33 @@ html.dark .bottom-nav-item.active {
 /* ========================================================= */
 
 html.dark .bg-white {
-  background-color: #111827 !important;
+  background-color: #000000 !important;
+
 }
 
 html.dark .bg-white\/90 {
-  background-color: rgba(
-    31,
-    41,
-    55,
-    0.94
-  ) !important;
+  background-color: #000000 !important;
+
 }
 
 html.dark .bg-white\/94 {
-  background-color: rgba(
-    17,
-    24,
-    39,
-    0.96
-  ) !important;
+background-color: #000000 !important;
+
 }
 
 html.dark .bg-white\/96 {
-  background-color: rgba(
-    17,
-    24,
-    39,
-    0.98
-  ) !important;
+  background-color: #000000 !important;
+
 }
 
 html.dark .text-black {
-  color: #ffffff !important;
+background-color: #000000 !important;
+
 }
 
 html.dark .text-neutral-900 {
-  color: #ffffff !important;
+background-color: #000000 !important;
+
 }
 
 html.dark .text-neutral-800 {
@@ -304,7 +313,7 @@ html.dark .border-l {
 
 html.dark input,
 html.dark textarea {
-  background: #1f2937;
+  background: #000000;
   color: #ffffff;
 
   border-color:
@@ -325,7 +334,7 @@ html.dark .text-white {
 }
 
 html.dark .hover\:bg-neutral-50:hover {
-  background-color: #1f2937 !important;
+  background-color: #000000 !important;
 }
 
 /* ========================================================= */
