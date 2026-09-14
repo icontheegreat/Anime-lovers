@@ -207,7 +207,7 @@ export async function me(
     await Author.findById(
       req.authorId
     ).select(
-      '_id name email country profileImage bio socials createdAt'
+      '_id name email country profileImage bio socials savedPosts createdAt'
     );
 
   if (!author) {

@@ -25,6 +25,7 @@ import {
 } from '../types';
 
 import DownloadVideoButton from './DownloadVideoButton';
+import SavePostButton from './SavePostButton';
 
 const threshold = 110;
 
@@ -552,14 +553,20 @@ export default function Feed({
             {post.description}
           </p>
 
-          {/* DOWNLOAD VIDEO */}
+          {/* DOWNLOAD VIDEO + SAVE */}
 
-          {post.mediaType ===
-            'video' && (
-            <DownloadVideoButton
+          <div className="mt-5 flex flex-wrap items-center gap-3">
+            {post.mediaType ===
+              'video' && (
+              <DownloadVideoButton
+                postId={post._id}
+              />
+            )}
+
+            <SavePostButton
               postId={post._id}
             />
-          )}
+          </div>
 
           {/* ANIME + TAGS */}
 

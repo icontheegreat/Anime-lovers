@@ -9,7 +9,10 @@ import {
   updatePost,
   deletePost,
   myPosts,
-  searchPosts
+  searchPosts,
+  savePost,
+  unsavePost,
+  getSavedPosts
 } from '../controllers/posts';
 
 
@@ -21,25 +24,28 @@ r.get('/mine', requireAuth, myPosts);
 
 r.get('/search', searchPosts);
 
-r.get(
-  '/:id/download',
-  downloadVideo
-);
+r.get('/saved', requireAuth, getSavedPosts);
 
+r.post('/:id/save', requireAuth, savePost);
+
+r.delete('/:id/save', requireAuth, unsavePost);
+
+r.get('/:id/download', downloadVideo);
 
 r.get('/:slug', getPost);
-
 
 r.post(
   '/',
   requireAuth,
   upload.fields([
-    { name: 'media', maxCount: 1 },
-    { name: 'threadMedia0', maxCount: 1 },
-    { name: 'threadMedia1', maxCount: 1 },
-    { name: 'threadMedia2', maxCount: 1 },
-    { name: 'threadMedia3', maxCount: 1 },
-    { name: 'threadMedia4', maxCount: 1 }
+    {
+      name: 'media',
+      maxCount: 1
+    },
+    {
+      name: 'threadMedia',
+      maxCount: 10
+    }
   ]),
   createPost
 );
@@ -48,12 +54,14 @@ r.put(
   '/:id',
   requireAuth,
   upload.fields([
-    { name: 'media', maxCount: 1 },
-    { name: 'threadMedia0', maxCount: 1 },
-    { name: 'threadMedia1', maxCount: 1 },
-    { name: 'threadMedia2', maxCount: 1 },
-    { name: 'threadMedia3', maxCount: 1 },
-    { name: 'threadMedia4', maxCount: 1 }
+    {
+      name: 'media',
+      maxCount: 1
+    },
+    {
+      name: 'threadMedia',
+      maxCount: 10
+    }
   ]),
   updatePost
 );

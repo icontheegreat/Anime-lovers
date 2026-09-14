@@ -1,10 +1,15 @@
 import { Response } from 'express';
 import { z } from 'zod';
+import { isValidObjectId } from 'mongoose';
 
 import {
   Post,
   MediaType
 } from '../models/Post';
+
+import {
+  Author
+} from '../models/Author';
 
 import { AuthRequest } from '../middleware/auth';
 
@@ -100,12 +105,6 @@ async function uploadPostMedia(
   mediaUrl: string;
   mediaPublicId: string;
 }> {
-  /*
-   * Explicitly type this as MediaType.
-   *
-   * This prevents TypeScript from treating the
-   * value as a generic string.
-   */
   const mediaType: MediaType =
     file.mimetype.startsWith('video/')
       ? 'video'
@@ -260,7 +259,8 @@ export async function createPost(
       );
 
       /*
-       * No file means this slot does not exist.
+       * No file means this slot
+       * does not exist.
        */
       if (!file) {
         continue;
@@ -270,8 +270,8 @@ export async function createPost(
         threadDescriptions[i] || '';
 
       /*
-       * Each thread description requires
-       * at least 2 words.
+       * Each thread description
+       * requires at least 2 words.
        */
       if (
         countWords(description) < 2
@@ -299,8 +299,8 @@ export async function createPost(
       });
 
       /*
-       * Only actually uploaded thread
-       * items are added to the database.
+       * Only actually uploaded
+       * thread items are added.
        */
       thread.push({
         mediaType:
@@ -355,9 +355,9 @@ export async function createPost(
     });
   } catch (e: any) {
     /*
-     * If anything fails after Cloudinary uploads,
-     * remove every uploaded file so we don't leave
-     * orphaned media behind.
+     * If anything fails after
+     * Cloudinary uploads, remove
+     * every uploaded file.
      */
     for (
       const item of uploadedMedia
@@ -719,4 +719,220 @@ export async function myPosts(
   return res.json({
     posts
   });
+}
+
+/*
+ * SAVE POST
+ */
+export async function savePost(
+  req: AuthRequest,
+  res: Response
+) {
+  try {
+    const { id } = req.params;
+
+    if (
+      !id ||
+      !isValidObjectId(id)
+    ) {
+      return res.status(400).json({
+        message:
+          'Invalid post ID.'
+      });
+    }
+
+    if (!req.authorId) {
+      return res.status(401).json({
+        message:
+          'Please log in to save posts.'
+      });
+    }
+
+    const post =
+      await Post.findOne({
+        _id: id,
+        deletedAt: null
+      }).select('_id');
+
+    if (!post) {
+      return res.status(404).json({
+        message:
+          'Post not found.'
+      });
+    }
+
+    await Author.findByIdAndUpdate(
+      req.authorId,
+      {
+        $addToSet: {
+          savedPosts:
+            post._id
+        }
+      }
+    );
+
+    return res.json({
+      saved: true,
+      postId:
+        post._id.toString()
+    });
+  } catch (error) {
+    console.error(
+      'savePost error:',
+      error
+    );
+
+    return res.status(500).json({
+      message:
+        'Unable to save post.'
+    });
+  }
+}
+
+/*
+ * UNSAVE POST
+ */
+export async function unsavePost(
+  req: AuthRequest,
+  res: Response
+) {
+  try {
+    const { id } = req.params;
+
+    if (
+      !id ||
+      !isValidObjectId(id)
+    ) {
+      return res.status(400).json({
+        message:
+          'Invalid post ID.'
+      });
+    }
+
+    if (!req.authorId) {
+      return res.status(401).json({
+        message:
+          'Please log in to remove saved posts.'
+      });
+    }
+
+    await Author.findByIdAndUpdate(
+      req.authorId,
+      {
+        $pull: {
+          savedPosts: id
+        }
+      }
+    );
+
+    return res.json({
+      saved: false,
+      postId: id
+    });
+  } catch (error) {
+    console.error(
+      'unsavePost error:',
+      error
+    );
+
+    return res.status(500).json({
+      message:
+        'Unable to remove saved post.'
+    });
+  }
+}
+
+/*
+ * GET SAVED POSTS
+ */
+export async function getSavedPosts(
+  req: AuthRequest,
+  res: Response
+) {
+  try {
+    if (!req.authorId) {
+      return res.status(401).json({
+        message:
+          'Please log in to view saved posts.'
+      });
+    }
+
+    const author =
+      await Author.findById(
+        req.authorId
+      ).select(
+        'savedPosts'
+      );
+
+    if (!author) {
+      return res.status(404).json({
+        message:
+          'Author not found.'
+      });
+    }
+
+    const savedIds =
+      author.savedPosts ?? [];
+
+    if (!savedIds.length) {
+      return res.json({
+        posts: []
+      });
+    }
+
+    const posts =
+      await Post.find({
+        _id: {
+          $in: savedIds
+        },
+        deletedAt: null
+      }).populate(
+        'authorId',
+        'name country profileImage'
+      );
+
+    /*
+     * Keep the savedPosts array order.
+     * Newer saves are stored later in
+     * the array, so reverse it.
+     */
+    const postMap = new Map(
+      posts.map((post) => [
+        post._id.toString(),
+        post
+      ])
+    );
+
+    const orderedPosts =
+      [...savedIds]
+        .reverse()
+        .map((id) =>
+          postMap.get(
+            id.toString()
+          )
+        )
+        .filter(
+          (
+            post
+          ): post is NonNullable<
+            typeof post
+          > =>
+            Boolean(post)
+        );
+
+    return res.json({
+      posts:
+        orderedPosts
+    });
+  } catch (error) {
+    console.error(
+      'getSavedPosts error:',
+      error
+    );
+
+    return res.status(500).json({
+      message:
+        'Unable to load saved posts.'
+    });
+  }
 }

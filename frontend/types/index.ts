@@ -14,6 +14,8 @@ export type Author = {
   bio?: string;
 
   socials?: Record<string, string>;
+
+  savedPosts?: string[];
 };
 
 export type ThreadItem = {
