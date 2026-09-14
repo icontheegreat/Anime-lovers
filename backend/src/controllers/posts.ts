@@ -437,6 +437,70 @@ export async function listPosts(
   });
 }
 
+export async function searchPosts(
+  req: AuthRequest,
+  res: Response
+) {
+  try {
+    const query =
+      typeof req.query.q === 'string'
+        ? req.query.q.trim()
+        : '';
+
+    if (!query) {
+      return res.json({
+        posts: []
+      });
+    }
+
+    const posts = await Post.find({
+      deletedAt: null,
+      $or: [
+        {
+          anime: {
+            $regex: query,
+            $options: 'i'
+          }
+        },
+        {
+          tags: {
+            $regex: query,
+            $options: 'i'
+          }
+        },
+        {
+          description: {
+            $regex: query,
+            $options: 'i'
+          }
+        }
+      ]
+    })
+      .sort({
+        createdAt: -1
+      })
+      .limit(30)
+      .populate(
+        'authorId',
+        'name country profileImage'
+      );
+
+    return res.json({
+      posts
+    });
+  } catch (e: any) {
+    console.error(
+      'Search posts error:',
+      e
+    );
+
+    return res.status(500).json({
+      message:
+        'Unable to search posts.'
+    });
+  }
+}
+
 export async function getPost(
   req: AuthRequest,
   res: Response

@@ -21,6 +21,38 @@ type PopularAuthor = {
   profileImage: string | null;
 };
 
+type SearchPost = {
+  _id: string;
+
+  authorId: {
+    _id: string;
+    name: string;
+    country?: string;
+    profileImage: string | null;
+  };
+
+  mediaType: 'image' | 'video';
+
+  mediaUrl: string;
+
+  description: string;
+
+  anime: string;
+
+  tags: string[];
+
+  slug: string;
+
+  createdAt: string;
+
+  thread: {
+    mediaType: 'image' | 'video';
+    mediaUrl: string;
+    mediaPublicId: string;
+    description: string;
+  }[];
+};
+
 type AnimeResult = {
   query: string;
   id: number;
@@ -109,6 +141,11 @@ export default function DiscoverPage() {
   const [error, setError] =
     useState('');
 
+  const [search, setSearch] = useState('');
+  const [searchResults, setSearchResults] = useState<SearchPost[]>([]);
+  const [searching, setSearching] = useState(false);
+  const [searchError, setSearchError] = useState('');
+
   useEffect(() => {
     let mounted = true;
 
@@ -143,6 +180,59 @@ export default function DiscoverPage() {
       mounted = false;
     };
   }, []);
+
+  useEffect(() => {
+    const query = search.trim();
+
+    if (!query) {
+      setSearchResults([]);
+      setSearching(false);
+      setSearchError('');
+      return;
+    }
+
+    let cancelled = false;
+
+    async function runSearch() {
+      try {
+        setSearching(true);
+        setSearchError('');
+
+        const result = await api(
+          `/posts/search?q=${encodeURIComponent(query)}`
+        );
+
+        if (!cancelled) {
+          setSearchResults(
+            result?.posts ?? []
+          );
+        }
+      } catch (e: any) {
+        if (!cancelled) {
+          setSearchError(
+            e?.message ||
+              'Unable to search posts.'
+          );
+
+          setSearchResults([]);
+        }
+      } finally {
+        if (!cancelled) {
+          setSearching(false);
+        }
+      }
+    }
+
+    const timer = setTimeout(
+      runSearch,
+      350
+    );
+
+    return () => {
+      cancelled = true;
+      clearTimeout(timer);
+    };
+  }, [search]);
 
   if (loading) {
     return (
@@ -198,7 +288,138 @@ export default function DiscoverPage() {
             Explore what fans are
             talking about right now.
           </p>
+
+          <div className="mt-6">
+            <div className="relative">
+              <input
+                type="text"
+                value={search}
+                onChange={(e) =>
+                  setSearch(e.target.value)
+                }
+                placeholder="Search anime..."
+                className="w-full rounded-xl border border-black bg-white px-4 py-3 pr-12 text-sm outline-none transition focus:ring-2 focus:ring-black dark:border-white dark:bg-black dark:text-white dark:focus:ring-white"
+              />
+
+              {search && (
+                <button
+                  type="button"
+                  onClick={() => setSearch('')}
+                  className="absolute right-4 top-1/2 -translate-y-1/2 text-sm text-neutral-500 transition hover:text-black dark:hover:text-white"
+                >
+                  ×
+                </button>
+              )}
+            </div>
+          </div>
         </header>
+
+        {search.trim() && (
+          <section className="mb-14">
+            <div className="mb-5">
+              <h2 className="text-xl font-semibold">
+                Search results
+              </h2>
+
+              <p className="mt-1 text-sm text-neutral-500 dark:text-neutral-400">
+                Results for "{search.trim()}"
+              </p>
+            </div>
+
+            {searching ? (
+              <div className="rounded-xl border border-black p-6 dark:border-white">
+                <p className="text-sm text-neutral-500 dark:text-neutral-400">
+                  Searching...
+                </p>
+              </div>
+            ) : searchError ? (
+              <div className="rounded-xl border border-black p-6 dark:border-white">
+                <p className="text-sm text-red-600 dark:text-red-400">
+                  {searchError}
+                </p>
+              </div>
+            ) : searchResults.length === 0 ? (
+              <div className="rounded-xl border border-black p-6 dark:border-white">
+                <p className="text-sm text-neutral-500 dark:text-neutral-400">
+                  No posts found for "{search.trim()}".
+                </p>
+              </div>
+            ) : (
+              <div className="space-y-5">
+                {searchResults.map((post) => (
+                  <Link
+                    key={post._id}
+                    href={`/post/${post.slug}`}
+                    className="block overflow-hidden rounded-xl border border-black transition hover:bg-neutral-100 dark:border-white dark:hover:bg-neutral-900"
+                  >
+                    <div className="flex gap-4 p-4">
+                      {post.mediaUrl && (
+                        <div className="h-24 w-20 shrink-0 overflow-hidden rounded-lg">
+                          {post.mediaType === 'video' ? (
+                            <video
+                              src={post.mediaUrl}
+                              className="h-full w-full object-cover"
+                              muted
+                            />
+                          ) : (
+                            <img
+                              src={post.mediaUrl}
+                              alt={post.anime}
+                              className="h-full w-full object-cover"
+                            />
+                          )}
+                        </div>
+                      )}
+
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center gap-3">
+                          {post.authorId?.profileImage ? (
+                            <img
+                              src={post.authorId.profileImage}
+                              alt={post.authorId.name}
+                              className="h-8 w-8 rounded-full object-cover"
+                            />
+                          ) : (
+                            <div className="flex h-8 w-8 items-center justify-center rounded-full border border-black text-xs font-semibold dark:border-white">
+                              {post.authorId?.name
+                                ?.charAt(0)
+                                .toUpperCase()}
+                            </div>
+                          )}
+
+                          <span className="text-sm font-medium">
+                            {post.authorId?.name}
+                          </span>
+                        </div>
+
+                        <h3 className="mt-3 font-semibold">
+                          {post.anime}
+                        </h3>
+
+                        <p className="mt-1 line-clamp-2 text-sm text-neutral-600 dark:text-neutral-300">
+                          {post.description}
+                        </p>
+
+                        {post.tags?.length > 0 && (
+                          <div className="mt-3 flex flex-wrap gap-2">
+                            {post.tags.map((tag) => (
+                              <span
+                                key={tag}
+                                className="rounded-full border border-black px-2 py-1 text-xs dark:border-white"
+                              >
+                                #{tag}
+                              </span>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </Link>
+                ))}
+              </div>
+            )}
+          </section>
+        )}
 
         {/* ================================================= */}
         {/* RECENTLY TALKED ABOUT */}
@@ -542,10 +763,9 @@ export default function DiscoverPage() {
     </h2>
 
     <p className="mt-1 text-sm text-neutral-500 dark:text-neutral-400">
-      Authors the community is posting with most.
+      Authors doing the most.
     </p>
   </div>
-
   {data.popularAuthors.length === 0 ? (
     <div className="rounded-xl border border-black p-6 dark:border-white">
       <p className="text-sm text-neutral-500 dark:text-neutral-400">

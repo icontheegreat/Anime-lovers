@@ -8,7 +8,8 @@ import {
   getPost,
   updatePost,
   deletePost,
-  myPosts
+  myPosts,
+  searchPosts
 } from '../controllers/posts';
 
 
@@ -17,6 +18,8 @@ const r = Router();
 r.get('/', listPosts);
 
 r.get('/mine', requireAuth, myPosts);
+
+r.get('/search', searchPosts);
 
 r.get(
   '/:id/download',

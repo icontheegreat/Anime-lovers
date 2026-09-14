@@ -545,7 +545,7 @@ export async function discover(
         },
 
         {
-          $limit: 10,
+          $limit: 3,
         },
 
         {
