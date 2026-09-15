@@ -110,11 +110,17 @@ export default function Header() {
   return (
     <header className="top-header">
       <Link
-        href="/"
-        className="site-logo"
-      >
-     Anime
-      </Link>
+  href="/"
+  className="site-logo"
+>
+  <span className="relative inline-flex items-start">
+    <span>Anime</span>
+
+    <span className="ml-1 -mt-1 text-[0.42em] font-medium tracking-tight">
+      by Icon
+    </span>
+  </span>
+</Link>
 
       <div className="flex items-center gap-2">
         {/* SORTING */}

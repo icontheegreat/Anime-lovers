@@ -25,7 +25,7 @@ import {
 } from '../types';
 
 import DownloadVideoButton from './DownloadVideoButton';
-import SavePostButton from './SavePostButton';
+// import SavePostButton from './SavePostButton';
 
 const threshold = 110;
 
@@ -562,10 +562,11 @@ export default function Feed({
                 postId={post._id}
               />
             )}
-
-            <SavePostButton
-              postId={post._id}
-            />
+{/* 
+<SavePostButton
+  postId={post._id}
+/>
+*/}
           </div>
 
           {/* ANIME + TAGS */}
