@@ -14,57 +14,38 @@ type SortOption =
 
 export default function Header() {
   const [dark, setDark] = useState(false);
+  const [sortOpen, setSortOpen] = useState(false);
+  const [sortOption, setSortOption] = useState<SortOption>('recent');
 
-  const [sortOpen, setSortOpen] =
-    useState(false);
-
-  const [sortOption, setSortOption] =
-    useState<SortOption>('recent');
-
-  const sortMenuRef =
-    useRef<HTMLDivElement>(null);
+  const sortMenuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    const savedTheme =
-      localStorage.getItem('theme');
-
-    const isDark =
-      savedTheme === 'dark';
+    // Check initial state from actual html class or localStorage
+    const savedTheme = localStorage.getItem('theme');
+    const hasDarkClass = document.documentElement.classList.contains('dark');
+    
+    const isDark = savedTheme ? savedTheme === 'dark' : hasDarkClass;
 
     setDark(isDark);
-
-    document.documentElement.classList.toggle(
-      'dark',
-      isDark
-    );
+    document.documentElement.classList.toggle('dark', isDark);
   }, []);
 
   useEffect(() => {
-    function handleClickOutside(
-      event: MouseEvent
-    ) {
+    function handleClickOutside(event: MouseEvent) {
       if (
         sortMenuRef.current &&
-        !sortMenuRef.current.contains(
-          event.target as Node
-        )
+        !sortMenuRef.current.contains(event.target as Node)
       ) {
         setSortOpen(false);
       }
     }
 
     if (sortOpen) {
-      document.addEventListener(
-        'mousedown',
-        handleClickOutside
-      );
+      document.addEventListener('mousedown', handleClickOutside);
     }
 
     return () => {
-      document.removeEventListener(
-        'mousedown',
-        handleClickOutside
-      );
+      document.removeEventListener('mousedown', handleClickOutside);
     };
   }, [sortOpen]);
 
@@ -73,30 +54,23 @@ export default function Header() {
 
     setDark(nextDark);
 
-    document.documentElement.classList.toggle(
-      'dark',
-      nextDark
-    );
+    if (nextDark) {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
 
-    localStorage.setItem(
-      'theme',
-      nextDark ? 'dark' : 'light'
-    );
+    localStorage.setItem('theme', nextDark ? 'dark' : 'light');
   }
 
-  function selectSort(
-    option: SortOption
-  ) {
+  function selectSort(option: SortOption) {
     setSortOption(option);
     setSortOpen(false);
 
     window.dispatchEvent(
-      new CustomEvent(
-        'feed-sort-change',
-        {
-          detail: option,
-        }
-      )
+      new CustomEvent('feed-sort-change', {
+        detail: option,
+      })
     );
   }
 
@@ -104,38 +78,26 @@ export default function Header() {
     sortOption === 'alphabetical'
       ? 'Alphabetical'
       : sortOption === 'recent'
-        ? 'Recently Posted'
-        : 'Most Relevant';
+      ? 'Recently Posted'
+      : 'Most Relevant';
 
   return (
     <header className="top-header">
-      <Link
-  href="/"
-  className="site-logo"
->
-  <span className="relative inline-flex items-start">
-    <span>Anime</span>
-
-    <span className="ml-1 -mt-1 text-[0.42em] font-medium tracking-tight">
-      by Icon
-    </span>
-  </span>
-</Link>
+      <Link href="/" className="site-logo">
+        <span className="relative inline-flex items-start">
+          <span>Anime</span>
+          <span className="ml-1 -mt-1 text-[0.42em] font-medium tracking-tight">
+            by Icon
+          </span>
+        </span>
+      </Link>
 
       <div className="flex items-center gap-2">
         {/* SORTING */}
-
-        <div
-          ref={sortMenuRef}
-          className="relative"
-        >
+        <div ref={sortMenuRef} className="relative">
           <button
             type="button"
-            onClick={() =>
-              setSortOpen(
-                (open) => !open
-              )
-            }
+            onClick={() => setSortOpen((open) => !open)}
             className="theme-toggle"
             aria-label="Feed sorting options"
             aria-expanded={sortOpen}
@@ -165,105 +127,66 @@ export default function Header() {
                 <p className="text-xs font-medium uppercase tracking-wide text-black dark:text-white">
                   Sort feed
                 </p>
-
                 <p className="mt-1 text-sm text-black dark:text-white">
                   {currentSortLabel}
                 </p>
               </div>
 
               <div className="p-1.5">
-                {/* ALPHABETICAL */}
                 <button
                   type="button"
-                  onClick={() =>
-                    selectSort('alphabetical')
-                  }
+                  onClick={() => selectSort('alphabetical')}
                   className={`flex w-full items-center justify-between rounded-lg px-3 py-2.5 text-left text-sm transition-colors ${
                     sortOption === 'alphabetical'
                       ? 'bg-black text-white dark:bg-white dark:text-black'
                       : 'bg-white text-black hover:bg-black hover:text-white dark:bg-black dark:text-white dark:hover:bg-white dark:hover:text-black'
                   }`}
                 >
-                  <span>
-                    Alphabetical
-                  </span>
-
-                  {sortOption === 'alphabetical' && (
-                    <span>✓</span>
-                  )}
+                  <span>Alphabetical</span>
+                  {sortOption === 'alphabetical' && <span>✓</span>}
                 </button>
 
-                {/* RECENTLY POSTED */}
                 <button
                   type="button"
-                  onClick={() =>
-                    selectSort('recent')
-                  }
+                  onClick={() => selectSort('recent')}
                   className={`flex w-full items-center justify-between rounded-lg px-3 py-2.5 text-left text-sm transition-colors ${
                     sortOption === 'recent'
                       ? 'bg-black text-white dark:bg-white dark:text-black'
                       : 'bg-white text-black hover:bg-black hover:text-white dark:bg-black dark:text-white dark:hover:bg-white dark:hover:text-black'
                   }`}
                 >
-                  <span>
-                    Recently Posted
-                  </span>
-
-                  {sortOption === 'recent' && (
-                    <span>✓</span>
-                  )}
+                  <span>Recently Posted</span>
+                  {sortOption === 'recent' && <span>✓</span>}
                 </button>
 
-                {/* MOST RELEVANT */}
                 <button
                   type="button"
-                  onClick={() =>
-                    selectSort('relevant')
-                  }
+                  onClick={() => selectSort('relevant')}
                   className={`flex w-full items-center justify-between rounded-lg px-3 py-2.5 text-left text-sm transition-colors ${
                     sortOption === 'relevant'
                       ? 'bg-black text-white dark:bg-white dark:text-black'
                       : 'bg-white text-black hover:bg-black hover:text-white dark:bg-black dark:text-white dark:hover:bg-white dark:hover:text-black'
                   }`}
                 >
-                  <span>
-                    Most Relevant
-                  </span>
-
-                  {sortOption === 'relevant' && (
-                    <span>✓</span>
-                  )}
+                  <span>Most Relevant</span>
+                  {sortOption === 'relevant' && <span>✓</span>}
                 </button>
               </div>
             </div>
           )}
         </div>
 
-        {/* THEME */}
-
+        {/* THEME TOGGLE */}
         <button
           type="button"
           onClick={toggleTheme}
           className="theme-toggle"
-          aria-label={
-            dark
-              ? 'Switch to light mode'
-              : 'Switch to dark mode'
-          }
+          aria-label={dark ? 'Switch to light mode' : 'Switch to dark mode'}
           aria-pressed={dark}
-          title={
-            dark
-              ? 'Switch to light mode'
-              : 'Switch to dark mode'
-          }
+          title={dark ? 'Switch to light mode' : 'Switch to dark mode'}
         >
-          <span aria-hidden="true">
-            {dark ? '☀' : '◐'}
-          </span>
-
-          <span>
-            {dark ? 'Light' : 'Dark'}
-          </span>
+          <span aria-hidden="true">{dark ? '☀' : '◐'}</span>
+          <span>{dark ? 'Light' : 'Dark'}</span>
         </button>
       </div>
     </header>
