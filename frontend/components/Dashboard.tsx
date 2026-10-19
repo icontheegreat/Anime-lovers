@@ -133,7 +133,7 @@ export default function Dashboard() {
     }
 
     /*
-     * Main post video validation
+- Main post video validation
      */
     if (media.type.startsWith('video/')) {
       try {
@@ -145,9 +145,9 @@ export default function Dashboard() {
           );
         }
 
-        if (d > 60) {
+        if (d > 240) {
           return setError(
-            'Video cannot exceed 60 seconds.'
+            'Video cannot exceed 240 seconds.'
           );
         }
       } catch {
@@ -158,7 +158,7 @@ export default function Dashboard() {
     }
 
     /*
-     * Validate each thread item.
+- Validate each thread item.
      */
     for (let i = 0; i < threadItems.length; i++) {
       const item = threadItems[i];
@@ -185,9 +185,9 @@ export default function Dashboard() {
             );
           }
 
-          if (d > 60) {
+          if (d > 240) {
             return setError(
-              `Video in detail ${i + 1} cannot exceed 60 seconds.`
+              `Video in detail ${i + 1} cannot exceed 240 seconds.`
             );
           }
         } catch {
@@ -201,7 +201,7 @@ export default function Dashboard() {
     const fd = new FormData();
 
     /*
-     * Main post
+- Main post
      */
     fd.append('media', media);
     fd.append('description', description);
@@ -209,7 +209,7 @@ export default function Dashboard() {
     fd.append('tags', JSON.stringify(tags));
 
     /*
-     * Additional thread media.
+- Additional thread media.
      */
     threadItems.forEach((item, index) => {
       if (item.file) {
@@ -221,7 +221,7 @@ export default function Dashboard() {
     });
 
     /*
-     * Thread descriptions.
+- Thread descriptions.
      */
     fd.append(
       'threadDescriptions',
@@ -241,7 +241,7 @@ export default function Dashboard() {
       });
 
       /*
-       * Reset everything after successful publish.
+- Reset everything after successful publish.
        */
       setDescription('');
       setAnime('');
