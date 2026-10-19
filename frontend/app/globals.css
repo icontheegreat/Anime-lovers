@@ -25,9 +25,7 @@ body {
 body {
   background: #ffffff;
   color: #000000;
-
   font-family: Arial, Helvetica, sans-serif;
-
   transition:
     background-color 0.2s ease,
     color 0.2s ease;
@@ -62,13 +60,8 @@ a {
 
 .app-content {
   min-height: 100vh;
-  background: #ffffff;
-  color: #000000;
-}
-
-html.dark .app-content {
-  background: #000000;
-  color: #ffffff;
+  background: inherit;
+  color: inherit;
 }
 
 /* ========================================================= */
@@ -80,20 +73,14 @@ html.dark .app-content {
   top: 0;
   left: 0;
   right: 0;
-
   z-index: 50;
-
   display: flex;
   align-items: center;
   justify-content: space-between;
-
   padding: 16px 20px;
-
   background: #ffffff;
   color: #000000;
-
   backdrop-filter: blur(12px);
-
   transition:
     background-color 0.2s ease,
     color 0.2s ease,
@@ -108,10 +95,8 @@ html.dark .top-header {
 .site-logo {
   color: inherit;
   text-decoration: none;
-
   font-size: 14px;
   font-weight: 700;
-
   letter-spacing: -0.02em;
 }
 
@@ -119,19 +104,13 @@ html.dark .top-header {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-
   border: 1px solid #000000;
-
   background: transparent;
   color: #000000;
-
   border-radius: 999px;
-
   padding: 7px 12px;
-
   font-size: 12px;
   line-height: 1;
-
   transition:
     background-color 0.2s ease,
     border-color 0.2s ease,
@@ -162,25 +141,15 @@ html.dark .theme-toggle:hover {
   left: 0;
   right: 0;
   bottom: 0;
-
   z-index: 50;
-
   display: flex;
   align-items: center;
   justify-content: space-around;
-
   height: 64px;
-
   background: #ffffff;
-
   border-top: 1px solid #000000;
-
   backdrop-filter: blur(14px);
-
-  padding-bottom: env(
-    safe-area-inset-bottom
-  );
-
+  padding-bottom: env(safe-area-inset-bottom);
   transition:
     background-color 0.2s ease,
     border-color 0.2s ease;
@@ -194,18 +163,12 @@ html.dark .bottom-nav {
 .bottom-nav-item {
   border: 0;
   background: transparent;
-
   color: #000000;
-
   text-decoration: none;
-
   font-size: 12px;
   font-weight: 500;
-
   padding: 10px 12px;
-
-  transition:
-    color 0.2s ease;
+  transition: color 0.2s ease;
 }
 
 .bottom-nav-item.active {
@@ -228,10 +191,8 @@ html.dark .bottom-nav-item.active {
 .media-shell video,
 .media-shell img {
   display: block;
-
   width: 100%;
   height: 100%;
-
   object-fit: contain;
 }
 
@@ -241,53 +202,6 @@ html.dark .bottom-nav-item.active {
 
 .hide-scrollbar {
   scrollbar-width: none;
-}
-
-/* ========================================================= */
-/* DARK MODE                                                  */
-/* ========================================================= */
-
-/*
- * Keep dark mode strictly black and white.
- *
- * IMPORTANT:
- * Do NOT override .text-black with background-color.
- * Tailwind's text utilities should control text color.
- */
-
-html.dark .bg-white,
-html.dark .bg-white\/90,
-html.dark .bg-white\/94,
-html.dark .bg-white\/96 {
-  background-color: #000000 !important;
-}
-
-html.dark .text-black {
-  color: #ffffff !important;
-}
-
-html.dark .text-neutral-900,
-html.dark .text-neutral-800,
-html.dark .text-neutral-700,
-html.dark .text-neutral-600,
-html.dark .text-neutral-500 {
-  color: #ffffff !important;
-}
-
-html.dark .text-white {
-  color: #ffffff !important;
-}
-
-html.dark input,
-html.dark textarea {
-  background: #000000;
-  color: #ffffff;
-  border-color: #ffffff;
-}
-
-html.dark input::placeholder,
-html.dark textarea::placeholder {
-  color: #ffffff;
 }
 
 /* ========================================================= */

@@ -2,10 +2,11 @@ import './globals.css';
 
 import Header from '../components/Header';
 import BottomNav from '../components/BottomNav';
+import WelcomeModal from '../components/WelcomeModal';
 
 export const metadata = {
-  title: 'Anime Visual Posts',
-  description: 'A minimal visual anime post feed.',
+  title: 'Anime BY Icon',
+  description: 'Anime post feed.',
 };
 
 const themeScript = `
@@ -32,12 +33,14 @@ export default function RootLayout({
       lang="en"
       suppressHydrationWarning
     >
-      <body>
+      <body className="bg-white text-black dark:bg-black dark:text-white transition-colors duration-200">
         <script
           dangerouslySetInnerHTML={{
             __html: themeScript,
           }}
         />
+
+        <WelcomeModal />
 
         <Header />
 
