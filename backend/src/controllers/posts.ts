@@ -92,8 +92,8 @@ async function validateVideo(
   }
 
   /*
-   * The actual duration is obtained from Cloudinary
-   * after uploading the file.
+- The actual duration is obtained from Cloudinary
+- after uploading the file.
    */
   return true;
 }
@@ -117,7 +117,7 @@ async function uploadPostMedia(
   );
 
   /*
-   * Video duration validation.
+- Video duration validation.
    */
   if (mediaType === 'video') {
     const duration = Number(
@@ -168,7 +168,7 @@ export async function createPost(
     );
 
     /*
-     * MAIN DESCRIPTION
+- MAIN DESCRIPTION
      */
     if (
       countWords(data.description) < 2
@@ -180,7 +180,7 @@ export async function createPost(
     }
 
     /*
-     * MAIN MEDIA
+- MAIN MEDIA
      */
     const mainFile = getFiles(
       req,
@@ -195,7 +195,7 @@ export async function createPost(
     }
 
     /*
-     * TAGS
+- TAGS
      */
     let tags: string[] = [];
 
@@ -218,7 +218,7 @@ export async function createPost(
     }
 
     /*
-     * MAIN MEDIA UPLOAD
+- MAIN MEDIA UPLOAD
      */
     const mainUpload =
       await uploadPostMedia(
@@ -233,13 +233,13 @@ export async function createPost(
     });
 
     /*
-     * THREAD DESCRIPTIONS
+- THREAD DESCRIPTIONS
      */
     const threadDescriptions =
       getThreadDescriptions(req);
 
     /*
-     * THREAD
+- THREAD
      */
     const thread: {
       mediaType: MediaType;
@@ -259,8 +259,8 @@ export async function createPost(
       );
 
       /*
-       * No file means this slot
-       * does not exist.
+- No file means this slot
+- does not exist.
        */
       if (!file) {
         continue;
@@ -270,8 +270,8 @@ export async function createPost(
         threadDescriptions[i] || '';
 
       /*
-       * Each thread description
-       * requires at least 2 words.
+- Each thread description
+- requires at least 2 words.
        */
       if (
         countWords(description) < 2
@@ -286,7 +286,7 @@ export async function createPost(
       await validateVideo(file);
 
       /*
-       * Upload thread media.
+- Upload thread media.
        */
       const uploaded =
         await uploadPostMedia(file);
@@ -299,8 +299,8 @@ export async function createPost(
       });
 
       /*
-       * Only actually uploaded
-       * thread items are added.
+- Only actually uploaded
+- thread items are added.
        */
       thread.push({
         mediaType:
@@ -317,7 +317,7 @@ export async function createPost(
     }
 
     /*
-     * CREATE POST
+- CREATE POST
      */
     const post = await Post.create({
       authorId:
@@ -355,9 +355,9 @@ export async function createPost(
     });
   } catch (e: any) {
     /*
-     * If anything fails after
-     * Cloudinary uploads, remove
-     * every uploaded file.
+- If anything fails after
+- Cloudinary uploads, remove
+- every uploaded file.
      */
     for (
       const item of uploadedMedia
@@ -458,20 +458,17 @@ export async function searchPosts(
       $or: [
         {
           anime: {
-            $regex: query,
-            $options: 'i'
+            $regex: query,$options: 'i'
           }
         },
         {
           tags: {
-            $regex: query,
-            $options: 'i'
+            $regex: query,$options: 'i'
           }
         },
         {
           description: {
-            $regex: query,
-            $options: 'i'
+            $regex: query,$options: 'i'
           }
         }
       ]
@@ -550,7 +547,7 @@ export async function updatePost(
     );
 
   /*
-   * MAIN DESCRIPTION
+- MAIN DESCRIPTION
    */
   if (
     countWords(
@@ -564,7 +561,7 @@ export async function updatePost(
   }
 
   /*
-   * UPDATE BASIC POST INFORMATION
+- UPDATE BASIC POST INFORMATION
    */
   post.description =
     data.description;
@@ -573,7 +570,7 @@ export async function updatePost(
     data.anime;
 
   /*
-   * TAGS
+- TAGS
    */
   post.tags =
     normalizeTags(
@@ -594,8 +591,8 @@ export async function updatePost(
   }
 
   /*
-   * REPLACE MAIN MEDIA
-   * if a new file was uploaded.
+- REPLACE MAIN MEDIA
+- if a new file was uploaded.
    */
   const newMainFile =
     getFiles(
@@ -611,7 +608,7 @@ export async function updatePost(
       post.mediaType;
 
     /*
-     * Upload new media.
+- Upload new media.
      */
     const uploaded =
       await uploadPostMedia(
@@ -619,7 +616,7 @@ export async function updatePost(
       );
 
     /*
-     * Replace database values.
+- Replace database values.
      */
     post.mediaType =
       uploaded.mediaType;
@@ -631,7 +628,7 @@ export async function updatePost(
       uploaded.mediaPublicId;
 
     /*
-     * Remove old Cloudinary media.
+- Remove old Cloudinary media.
      */
     try {
       await destroyMedia(
@@ -667,7 +664,7 @@ export async function deletePost(
   }
 
   /*
-   * SOFT DELETE
+- SOFT DELETE
    */
   post.deletedAt =
     new Date();
@@ -675,7 +672,7 @@ export async function deletePost(
   await post.save();
 
   /*
-   * DELETE MAIN MEDIA
+- DELETE MAIN MEDIA
    */
   try {
     await destroyMedia(
@@ -685,7 +682,7 @@ export async function deletePost(
   } catch {}
 
   /*
-   * DELETE THREAD MEDIA
+- DELETE THREAD MEDIA
    */
   for (
     const item of post.thread || []
@@ -722,7 +719,7 @@ export async function myPosts(
 }
 
 /*
- * SAVE POST
+- SAVE POST
  */
 export async function savePost(
   req: AuthRequest,
@@ -790,7 +787,7 @@ export async function savePost(
 }
 
 /*
- * UNSAVE POST
+- UNSAVE POST
  */
 export async function unsavePost(
   req: AuthRequest,
@@ -843,7 +840,7 @@ export async function unsavePost(
 }
 
 /*
- * GET SAVED POSTS
+- GET SAVED POSTS
  */
 export async function getSavedPosts(
   req: AuthRequest,
@@ -872,7 +869,7 @@ export async function getSavedPosts(
     }
 
     const savedIds =
-      author.savedPosts ?? [];
+      (author as any).savedPosts ?? [];
 
     if (!savedIds.length) {
       return res.json({
@@ -892,9 +889,9 @@ export async function getSavedPosts(
       );
 
     /*
-     * Keep the savedPosts array order.
-     * Newer saves are stored later in
-     * the array, so reverse it.
+- Keep the savedPosts array order.
+- Newer saves are stored later in
+- the array, so reverse it.
      */
     const postMap = new Map(
       posts.map((post) => [
