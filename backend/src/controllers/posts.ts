@@ -127,7 +127,7 @@ async function uploadPostMedia(
     if (
       !Number.isFinite(duration) ||
       duration < 5 ||
-      duration > 120
+      duration > 240
     ) {
       try {
         await destroyMedia(
@@ -141,7 +141,7 @@ async function uploadPostMedia(
           ? 'Unable to validate video duration. Please try another video.'
           : duration < 5
           ? 'Video must be at least 5 seconds long.'
-          : 'Video cannot exceed 120 seconds.'
+          : 'Video cannot exceed 240 seconds.'
       );
     }
   }
