@@ -5,7 +5,7 @@ import BottomNav from '../components/BottomNav';
 import WelcomeModal from '../components/WelcomeModal';
 
 export const metadata = {
-  title: 'Anime BY Icon',
+  title: 'Anime By Icon',
   description: 'Anime post feed.',
 };
 
