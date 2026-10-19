@@ -68,7 +68,7 @@ type DiscoverData = {
 };
 
 /*
- * Simple in-memory cache.
+- Simple in-memory cache.
  */
 const cache = new Map<
   string,
@@ -103,9 +103,9 @@ async function cached<T>(
 }
 
 /*
- * =========================================================
- * ANILIST
- * =========================================================
+- =========================================================
+- ANILIST
+- =========================================================
  */
 
 async function fetchAniListAnime(
@@ -231,9 +231,9 @@ async function fetchAniListAnime(
 }
 
 /*
- * =========================================================
- * YOUTUBE
- * =========================================================
+- =========================================================
+- YOUTUBE
+- =========================================================
  */
 
 async function fetchYouTube(
@@ -313,9 +313,9 @@ async function fetchYouTube(
 }
 
 /*
- * =========================================================
- * GOOGLE NEWS RSS
- * =========================================================
+- =========================================================
+- GOOGLE NEWS RSS
+- =========================================================
  */
 
 function decodeXml(value: string) {
@@ -419,9 +419,9 @@ async function fetchNews(
 }
 
 /*
- * =========================================================
- * DISCOVER
- * =========================================================
+- =========================================================
+- DISCOVER
+- =========================================================
  */
 
 export async function discover(
@@ -430,18 +430,9 @@ export async function discover(
 ) {
   try {
     /*
-     * Last 24 hours.
-     */
-    const since =
-      new Date(
-        Date.now() -
-          24 * 60 * 60 * 1000
-      );
-
-    /*
-     * =======================================================
-     * RECENTLY TALKED ABOUT
-     * =======================================================
+- =======================================================
+- RECENTLY TALKED ABOUT (All-Time)
+- =======================================================
      */
 
     const recentlyTalked =
@@ -449,9 +440,8 @@ export async function discover(
         {
           $match: {
             deletedAt: null,
-
-            createdAt: {
-              $gte: since,
+            anime: {
+              $exists: true,$ne: '',
             },
           },
         },
@@ -498,15 +488,15 @@ export async function discover(
       ]);
 
     /*
-     * =======================================================
-     * POPULAR ANIME
+- =======================================================
+- POPULAR ANIME
      *
-     * All community posts.
+- All community posts.
      *
-     * Sorted by number of posts.
+- Sorted by number of posts.
      *
-     * Only the anime name is returned.
-     * =======================================================
+- Only the anime name is returned.
+- =======================================================
      */
 
     const popularAnime =
@@ -515,8 +505,7 @@ export async function discover(
           $match: {
             deletedAt: null,
             anime: {
-              $exists: true,
-              $ne: '',
+              $exists: true,$ne: '',
             },
           },
         },
@@ -557,18 +546,18 @@ export async function discover(
       ]);
 
     /*
-     * =======================================================
-     * POPULAR AUTHORS
+- =======================================================
+- POPULAR AUTHORS
      *
-     * Authors with the most posts.
+- Authors with the most posts.
      *
-     * Only:
-     *   _id
-     *   name
-     *   profileImage
+- Only:
+-   _id
+-   name
+-   profileImage
      *
-     * are returned.
-     * =======================================================
+- are returned.
+- =======================================================
      */
 
     const popularAuthors =
@@ -578,8 +567,7 @@ export async function discover(
             deletedAt: null,
 
             authorId: {
-              $exists: true,
-              $ne: null,
+              $exists: true,$ne: null,
             },
           },
         },
@@ -639,9 +627,9 @@ export async function discover(
       ]);
 
     /*
-     * =======================================================
-     * THESE TOPICS POWER THE EXTERNAL SOURCES
-     * =======================================================
+- =======================================================
+- THESE TOPICS POWER THE EXTERNAL SOURCES
+- =======================================================
      */
 
     const topics =
@@ -650,9 +638,9 @@ export async function discover(
       );
 
     /*
-     * =======================================================
-     * ANILIST
-     * =======================================================
+- =======================================================
+- ANILIST
+- =======================================================
      */
 
     const animeResults =
@@ -680,9 +668,9 @@ export async function discover(
       );
 
     /*
-     * =======================================================
-     * YOUTUBE + NEWS
-     * =======================================================
+- =======================================================
+- YOUTUBE + NEWS
+- =======================================================
      */
 
     const [youtube, news] =
@@ -715,9 +703,9 @@ export async function discover(
       ]);
 
     /*
-     * =======================================================
-     * FINAL RESPONSE
-     * =======================================================
+- =======================================================
+- FINAL RESPONSE
+- =======================================================
      */
 
     const result: DiscoverData = {
