@@ -18,6 +18,7 @@
     "hooks": "@/hooks"
   },
   "registries": {
-    "@23rd": "https://23rd.dev/r/{name}.json"
+    "@23rd": "https://23rd.dev/r/{name}.json",
+    "@evilbuttons": "https://evilbuttons.radiumcoders.com/r/{name}.json"
   }
 }
