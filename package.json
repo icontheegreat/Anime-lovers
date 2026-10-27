@@ -8,5 +8,11 @@
     "build": "npm --prefix frontend run build && npm --prefix backend run build",
     "start": "concurrently \"npm:--prefix frontend start\" \"npm:--prefix backend start\""
   },
-  "devDependencies": { "concurrently": "^9.2.1" }
+  "devDependencies": {
+    "concurrently": "^9.2.1"
+  },
+  "dependencies": {
+    "clsx": "^2.1.1",
+    "tailwind-merge": "^3.7.0"
+  }
 }

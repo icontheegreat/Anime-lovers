@@ -6,6 +6,7 @@ import {
   useRef,
   useState,
 } from 'react';
+import { LiveOrb } from './ui/live-orb';
 
 type SortOption =
   | 'alphabetical'
@@ -83,14 +84,22 @@ export default function Header() {
 
   return (
     <header className="top-header">
-      <Link href="/" className="site-logo">
-        <span className="relative inline-flex items-start">
-          <span>Anime</span>
-          <span className="ml-1 -mt-1 text-[0.42em] font-medium tracking-tight">
-            by Icon
+      <div className="flex items-center gap-3">
+        {/* LIVE ORB MASCOT */}
+        <div className="relative flex h-8 w-8 items-center justify-center overflow-hidden rounded-full border border-black/10 dark:border-white/10">
+          <LiveOrb />
+        </div>
+
+        {/* LOGO */}
+        <Link href="/" className="site-logo">
+          <span className="relative inline-flex items-start">
+            <span>Anime</span>
+            <span className="ml-1 -mt-1 text-[0.42em] font-medium tracking-tight">
+              by Icon
+            </span>
           </span>
-        </span>
-      </Link>
+        </Link>
+      </div>
 
       <div className="flex items-center gap-2">
         {/* SORTING */}
