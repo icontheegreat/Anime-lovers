@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 
 import { api } from '../../lib/api';
+import { AnimeSphereHero } from '../../components/ui/AnimeSphereHero';
 
 type RecentlyTalked = {
   name: string;
@@ -103,9 +104,7 @@ type DiscoverData = {
   popularAuthors: PopularAuthor[];
 };
 
-function preferredTitle(
-  anime: AnimeResult
-) {
+function preferredTitle(anime: AnimeResult) {
   return (
     anime.title.userPreferred ||
     anime.title.english ||
@@ -115,16 +114,12 @@ function preferredTitle(
   );
 }
 
-function airingText(
-  anime: AnimeResult
-) {
+function airingText(anime: AnimeResult) {
   if (!anime.nextAiringEpisode) {
     return null;
   }
 
-  const date = new Date(
-    anime.nextAiringEpisode.airingAt * 1000
-  );
+  const date = new Date(anime.nextAiringEpisode.airingAt * 1000);
 
   return `Episode ${
     anime.nextAiringEpisode.episode
@@ -132,14 +127,11 @@ function airingText(
 }
 
 export default function DiscoverPage() {
-  const [data, setData] =
-    useState<DiscoverData | null>(null);
+  const [data, setData] = useState<DiscoverData | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
 
-  const [loading, setLoading] =
-    useState(true);
-
-  const [error, setError] =
-    useState('');
+  const [showHero, setShowHero] = useState(true);
 
   const [search, setSearch] = useState('');
   const [searchResults, setSearchResults] = useState<SearchPost[]>([]);
@@ -154,18 +146,14 @@ export default function DiscoverPage() {
         setLoading(true);
         setError('');
 
-        const result =
-          await api('/discover');
+        const result = await api('/discover');
 
         if (mounted) {
           setData(result);
         }
       } catch (e: any) {
         if (mounted) {
-          setError(
-            e?.message ||
-              'Unable to load Discover.'
-          );
+          setError(e?.message || 'Unable to load Discover.');
         }
       } finally {
         if (mounted) {
@@ -203,17 +191,11 @@ export default function DiscoverPage() {
         );
 
         if (!cancelled) {
-          setSearchResults(
-            result?.posts ?? []
-          );
+          setSearchResults(result?.posts ?? []);
         }
       } catch (e: any) {
         if (!cancelled) {
-          setSearchError(
-            e?.message ||
-              'Unable to search posts.'
-          );
-
+          setSearchError(e?.message || 'Unable to search posts.');
           setSearchResults([]);
         }
       } finally {
@@ -223,10 +205,7 @@ export default function DiscoverPage() {
       }
     }
 
-    const timer = setTimeout(
-      runSearch,
-      350
-    );
+    const timer = setTimeout(runSearch, 350);
 
     return () => {
       cancelled = true;
@@ -238,13 +217,10 @@ export default function DiscoverPage() {
     return (
       <main className="min-h-screen bg-white px-5 pb-24 pt-20 dark:bg-black dark:text-white">
         <div className="mx-auto max-w-5xl">
-          <h1 className="text-3xl font-semibold">
-            Discover
-          </h1>
+          <h1 className="text-3xl font-semibold">Discover</h1>
 
           <p className="mt-4 text-sm text-neutral-500 dark:text-neutral-400">
-            Loading what the community is
-            talking about…
+            Loading what the community is talking about…
           </p>
         </div>
       </main>
@@ -255,9 +231,7 @@ export default function DiscoverPage() {
     return (
       <main className="min-h-screen bg-white px-5 pb-24 pt-20 dark:bg-black dark:text-white">
         <div className="mx-auto max-w-5xl">
-          <h1 className="text-3xl font-semibold">
-            Discover
-          </h1>
+          <h1 className="text-3xl font-semibold">Discover</h1>
 
           <p className="mt-4 text-sm text-red-600 dark:text-red-400">
             {error}
@@ -272,232 +246,209 @@ export default function DiscoverPage() {
   }
 
   return (
-    <main className="min-h-screen bg-white pb-24 pt-20 text-black dark:bg-black dark:text-white">
-      <div className="mx-auto max-w-5xl px-5">
+    <div className="min-h-screen bg-white text-black dark:bg-black dark:text-white">
+      {/* 200vh Scroll Assembly Eren Hero */}
+      {showHero && (
+        <AnimeSphereHero
+          animeList={data.popularAnime}
+          onSkip={() => setShowHero(false)}
+        />
+      )}
 
-        {/* ================================================= */}
-        {/* HEADER */}
-        {/* ================================================= */}
+      {/* Main Discover Content */}
+      <main className="pb-24 pt-20">
+        <div className="mx-auto max-w-5xl px-5">
+          {/* HEADER */}
+          <header className="mb-10">
+            <h1 className="text-3xl font-semibold">Discover</h1>
 
-        <header className="mb-10">
-          <h1 className="text-3xl font-semibold">
-            Discover
-          </h1>
+            <p className="mt-2 text-sm text-neutral-500 dark:text-neutral-400">
+              Explore what fans are talking about right now.
+            </p>
 
-          <p className="mt-2 text-sm text-neutral-500 dark:text-neutral-400">
-            Explore what fans are
-            talking about right now.
-          </p>
+            <div className="mt-6">
+              <div className="relative">
+                <input
+                  type="text"
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  placeholder="Search anime..."
+                  className="w-full rounded-xl border border-black bg-white px-4 py-3 pr-12 text-sm outline-none transition focus:ring-2 focus:ring-black dark:border-white dark:bg-black dark:text-white dark:focus:ring-white"
+                />
 
-          <div className="mt-6">
-            <div className="relative">
-              <input
-                type="text"
-                value={search}
-                onChange={(e) =>
-                  setSearch(e.target.value)
-                }
-                placeholder="Search anime..."
-                className="w-full rounded-xl border border-black bg-white px-4 py-3 pr-12 text-sm outline-none transition focus:ring-2 focus:ring-black dark:border-white dark:bg-black dark:text-white dark:focus:ring-white"
-              />
-
-              {search && (
-                <button
-                  type="button"
-                  onClick={() => setSearch('')}
-                  className="absolute right-4 top-1/2 -translate-y-1/2 text-sm text-neutral-500 transition hover:text-black dark:hover:text-white"
-                >
-                  ×
-                </button>
-              )}
+                {search && (
+                  <button
+                    type="button"
+                    onClick={() => setSearch('')}
+                    className="absolute right-4 top-1/2 -translate-y-1/2 text-sm text-neutral-500 transition hover:text-black dark:hover:text-white"
+                  >
+                    ×
+                  </button>
+                )}
+              </div>
             </div>
-          </div>
-        </header>
+          </header>
 
-        {search.trim() && (
-          <section className="mb-14">
+          {search.trim() && (
+            <section className="mb-14">
+              <div className="mb-5">
+                <h2 className="text-xl font-semibold">Search results</h2>
+
+                <p className="mt-1 text-sm text-neutral-500 dark:text-neutral-400">
+                  Results for "{search.trim()}"
+                </p>
+              </div>
+
+              {searching ? (
+                <div className="rounded-xl border border-black p-6 dark:border-white">
+                  <p className="text-sm text-neutral-500 dark:text-neutral-400">
+                    Searching...
+                  </p>
+                </div>
+              ) : searchError ? (
+                <div className="rounded-xl border border-black p-6 dark:border-white">
+                  <p className="text-sm text-red-600 dark:text-red-400">
+                    {searchError}
+                  </p>
+                </div>
+              ) : searchResults.length === 0 ? (
+                <div className="rounded-xl border border-black p-6 dark:border-white">
+                  <p className="text-sm text-neutral-500 dark:text-neutral-400">
+                    No posts found for "{search.trim()}".
+                  </p>
+                </div>
+              ) : (
+                <div className="space-y-5">
+                  {searchResults.map((post) => (
+                    <Link
+                      key={post._id}
+                      href={`/post/${post.slug}`}
+                      className="block overflow-hidden rounded-xl border border-black transition hover:bg-neutral-100 dark:border-white dark:hover:bg-neutral-900"
+                    >
+                      <div className="flex gap-4 p-4">
+                        {post.mediaUrl && (
+                          <div className="h-24 w-20 shrink-0 overflow-hidden rounded-lg">
+                            {post.mediaType === 'video' ? (
+                              <video
+                                src={post.mediaUrl}
+                                className="h-full w-full object-cover"
+                                muted
+                              />
+                            ) : (
+                              <img
+                                src={post.mediaUrl}
+                                alt={post.anime}
+                                className="h-full w-full object-cover"
+                              />
+                            )}
+                          </div>
+                        )}
+
+                        <div className="min-w-0 flex-1">
+                          <div className="flex items-center gap-3">
+                            {post.authorId?.profileImage ? (
+                              <img
+                                src={post.authorId.profileImage}
+                                alt={post.authorId.name}
+                                className="h-8 w-8 rounded-full object-cover"
+                              />
+                            ) : (
+                              <div className="flex h-8 w-8 items-center justify-center rounded-full border border-black text-xs font-semibold dark:border-white">
+                                {post.authorId?.name?.charAt(0).toUpperCase()}
+                              </div>
+                            )}
+
+                            <span className="text-sm font-medium">
+                              {post.authorId?.name}
+                            </span>
+                          </div>
+
+                          <h3 className="mt-3 font-semibold">{post.anime}</h3>
+
+                          <p className="mt-1 line-clamp-2 text-sm text-neutral-600 dark:text-neutral-300">
+                            {post.description}
+                          </p>
+
+                          {post.tags?.length > 0 && (
+                            <div className="mt-3 flex flex-wrap gap-2">
+                              {post.tags.map((tag) => (
+                                <span
+                                  key={tag}
+                                  className="rounded-full border border-black px-2 py-1 text-xs dark:border-white"
+                                >
+                                  #{tag}
+                                </span>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </Link>
+                  ))}
+                </div>
+              )}
+            </section>
+          )}
+
+          {/* RECENTLY TALKED ABOUT */}
+          <section>
             <div className="mb-5">
-              <h2 className="text-xl font-semibold">
-                Search results
-              </h2>
+              <h2 className="text-xl font-semibold">Recently talked about</h2>
 
               <p className="mt-1 text-sm text-neutral-500 dark:text-neutral-400">
-                Results for "{search.trim()}"
+                Based on what community is talking about.
               </p>
             </div>
 
-            {searching ? (
+            {data.recentlyTalked.length === 0 ? (
               <div className="rounded-xl border border-black p-6 dark:border-white">
                 <p className="text-sm text-neutral-500 dark:text-neutral-400">
-                  Searching...
-                </p>
-              </div>
-            ) : searchError ? (
-              <div className="rounded-xl border border-black p-6 dark:border-white">
-                <p className="text-sm text-red-600 dark:text-red-400">
-                  {searchError}
-                </p>
-              </div>
-            ) : searchResults.length === 0 ? (
-              <div className="rounded-xl border border-black p-6 dark:border-white">
-                <p className="text-sm text-neutral-500 dark:text-neutral-400">
-                  No posts found for "{search.trim()}".
+                  Nothing to talk about.
                 </p>
               </div>
             ) : (
-              <div className="space-y-5">
-                {searchResults.map((post) => (
-                  <Link
-                    key={post._id}
-                    href={`/post/${post.slug}`}
-                    className="block overflow-hidden rounded-xl border border-black transition hover:bg-neutral-100 dark:border-white dark:hover:bg-neutral-900"
-                  >
-                    <div className="flex gap-4 p-4">
-                      {post.mediaUrl && (
-                        <div className="h-24 w-20 shrink-0 overflow-hidden rounded-lg">
-                          {post.mediaType === 'video' ? (
-                            <video
-                              src={post.mediaUrl}
-                              className="h-full w-full object-cover"
-                              muted
-                            />
-                          ) : (
-                            <img
-                              src={post.mediaUrl}
-                              alt={post.anime}
-                              className="h-full w-full object-cover"
-                            />
-                          )}
-                        </div>
-                      )}
+              <div className="max-h-40 overflow-y-auto rounded-xl border border-black p-4 sm:max-h-48 dark:border-white">
+                <div className="flex flex-wrap gap-3">
+                  {data.recentlyTalked.map((topic) => (
+                    <div
+                      key={topic.name}
+                      className="rounded-full border border-black px-4 py-2 dark:border-white"
+                    >
+                      <span className="text-sm font-medium">{topic.name}</span>
 
-                      <div className="min-w-0 flex-1">
-                        <div className="flex items-center gap-3">
-                          {post.authorId?.profileImage ? (
-                            <img
-                              src={post.authorId.profileImage}
-                              alt={post.authorId.name}
-                              className="h-8 w-8 rounded-full object-cover"
-                            />
-                          ) : (
-                            <div className="flex h-8 w-8 items-center justify-center rounded-full border border-black text-xs font-semibold dark:border-white">
-                              {post.authorId?.name
-                                ?.charAt(0)
-                                .toUpperCase()}
-                            </div>
-                          )}
-
-                          <span className="text-sm font-medium">
-                            {post.authorId?.name}
-                          </span>
-                        </div>
-
-                        <h3 className="mt-3 font-semibold">
-                          {post.anime}
-                        </h3>
-
-                        <p className="mt-1 line-clamp-2 text-sm text-neutral-600 dark:text-neutral-300">
-                          {post.description}
-                        </p>
-
-                        {post.tags?.length > 0 && (
-                          <div className="mt-3 flex flex-wrap gap-2">
-                            {post.tags.map((tag) => (
-                              <span
-                                key={tag}
-                                className="rounded-full border border-black px-2 py-1 text-xs dark:border-white"
-                              >
-                                #{tag}
-                              </span>
-                            ))}
-                          </div>
-                        )}
-                      </div>
+                      <span className="ml-2 text-xs text-neutral-500 dark:text-neutral-400">
+                        {topic.count} {topic.count === 1 ? 'post' : 'posts'}
+                      </span>
                     </div>
-                  </Link>
-                ))}
+                  ))}
+                </div>
               </div>
             )}
           </section>
-        )}
 
-        {/* ================================================= */}
-        {/* RECENTLY TALKED ABOUT */}
-        {/* ================================================= */}
+          {/* POPULAR IN THE COMMUNITY */}
+          <section className="mt-14">
+            <div className="mb-5">
+              <h2 className="text-xl font-semibold">Popular in the Community</h2>
 
-        <section>
-          <div className="mb-5">
-            <h2 className="text-xl font-semibold">
-              Recently talked about
-            </h2>
-
-            <p className="mt-1 text-sm text-neutral-500 dark:text-neutral-400">
-              Based on what community is talking about.
-            </p>
-          </div>
-
-          {data.recentlyTalked.length === 0 ? (
-            <div className="rounded-xl border border-black p-6 dark:border-white">
-              <p className="text-sm text-neutral-500 dark:text-neutral-400">
-                Nothing to talk about.
+              <p className="mt-1 text-sm text-neutral-500 dark:text-neutral-400">
+                The anime getting the most attention.
               </p>
             </div>
-          ) : (
-            <div className="max-h-40 overflow-y-auto rounded-xl border border-black p-4 sm:max-h-48 dark:border-white">
-              <div className="flex flex-wrap gap-3">
-                {data.recentlyTalked.map((topic) => (
-                  <div
-                    key={topic.name}
-                    className="rounded-full border border-black px-4 py-2 dark:border-white"
-                  >
-                    <span className="text-sm font-medium">
-                      {topic.name}
-                    </span>
 
-                    <span className="ml-2 text-xs text-neutral-500 dark:text-neutral-400">
-                      {topic.count}{' '}
-                      {topic.count === 1
-                        ? 'post'
-                        : 'posts'}
-                    </span>
-                  </div>
-                ))}
+            {data.popularAnime.length === 0 ? (
+              <div className="rounded-xl border border-black p-6 dark:border-white">
+                <p className="text-sm text-neutral-500 dark:text-neutral-400">
+                  Nothing is popular yet.
+                </p>
               </div>
-            </div>
-          )}
-        </section>
-
-        {/* ================================================= */}
-        {/* POPULAR IN THE COMMUNITY */}
-        {/* ================================================= */}
-
-        <section className="mt-14">
-          <div className="mb-5">
-            <h2 className="text-xl font-semibold">
-              Popular in the Community
-            </h2>
-
-            <p className="mt-1 text-sm text-neutral-500 dark:text-neutral-400">
-              The anime getting the most attention.
-            </p>
-          </div>
-
-          {data.popularAnime.length === 0 ? (
-            <div className="rounded-xl border border-black p-6 dark:border-white">
-              <p className="text-sm text-neutral-500 dark:text-neutral-400">
-                Nothing is popular yet.
-              </p>
-            </div>
-          ) : (
-            <div className="grid gap-5 sm:grid-cols-3">
-              {data.popularAnime.map(
-                (anime, index) => (
+            ) : (
+              <div className="grid gap-5 sm:grid-cols-3">
+                {data.popularAnime.map((anime, index) => (
                   <article
                     key={anime.name}
                     className="overflow-hidden rounded-xl border border-black bg-white dark:border-white dark:bg-black"
                   >
-                    {/* IMAGE */}
-
                     {anime.image ? (
                       <img
                         src={anime.image}
@@ -510,51 +461,38 @@ export default function DiscoverPage() {
                       </div>
                     )}
 
-                    {/* INFO */}
-
                     <div className="p-4">
                       <p className="text-xs font-medium uppercase tracking-wide text-neutral-500 dark:text-neutral-400">
                         #{index + 1} Popular
                       </p>
 
-                      <h3 className="mt-1 text-base font-semibold">
-                        {anime.name}
-                      </h3>
+                      <h3 className="mt-1 text-base font-semibold">{anime.name}</h3>
                     </div>
                   </article>
-                )
-              )}
-            </div>
-          )}
-        </section>
+                ))}
+              </div>
+            )}
+          </section>
 
-        {/* ================================================= */}
-        {/* WHAT'S HAPPENING NOW */}
-        {/* ================================================= */}
+          {/* WHAT'S HAPPENING NOW */}
+          <section className="mt-14">
+            <div className="mb-5">
+              <h2 className="text-xl font-semibold">What's happening now</h2>
 
-        <section className="mt-14">
-          <div className="mb-5">
-            <h2 className="text-xl font-semibold">
-              What's happening now
-            </h2>
-
-            <p className="mt-1 text-sm text-neutral-500 dark:text-neutral-400">
-              Anime information related to
-              recent community topics.
-            </p>
-          </div>
-
-          {data.anime.length === 0 ? (
-            <div className="rounded-xl border border-black p-6 dark:border-white">
-              <p className="text-sm text-neutral-500 dark:text-neutral-400">
-                No information
-                is available right now.
+              <p className="mt-1 text-sm text-neutral-500 dark:text-neutral-400">
+                Anime information related to recent community topics.
               </p>
             </div>
-          ) : (
-            <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
-              {data.anime.map(
-                (anime) => (
+
+            {data.anime.length === 0 ? (
+              <div className="rounded-xl border border-black p-6 dark:border-white">
+                <p className="text-sm text-neutral-500 dark:text-neutral-400">
+                  No information is available right now.
+                </p>
+              </div>
+            ) : (
+              <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
+                {data.anime.map((anime) => (
                   <article
                     key={`${anime.id}-${anime.query}`}
                     className="overflow-hidden rounded-xl border border-black dark:border-white"
@@ -562,43 +500,20 @@ export default function DiscoverPage() {
                     {anime.coverImage && (
                       <img
                         src={anime.coverImage}
-                        alt={preferredTitle(
-                          anime
-                        )}
+                        alt={preferredTitle(anime)}
                         className="aspect-[3/4] w-full object-cover"
                       />
                     )}
 
                     <div className="p-4">
-                      <h3 className="font-medium">
-                        {preferredTitle(
-                          anime
-                        )}
-                      </h3>
+                      <h3 className="font-medium">{preferredTitle(anime)}</h3>
 
                       <div className="mt-2 space-y-1 text-xs text-neutral-500 dark:text-neutral-400">
-                        {anime.status && (
-                          <p>
-                            {anime.status}
-                          </p>
-                        )}
+                        {anime.status && <p>{anime.status}</p>}
 
-                        {anime.episodes && (
-                          <p>
-                            {anime.episodes}{' '}
-                            episodes
-                          </p>
-                        )}
+                        {anime.episodes && <p>{anime.episodes} episodes</p>}
 
-                        {airingText(
-                          anime
-                        ) && (
-                          <p>
-                            {airingText(
-                              anime
-                            )}
-                          </p>
-                        )}
+                        {airingText(anime) && <p>{airingText(anime)}</p>}
                       </div>
 
                       {anime.siteUrl && (
@@ -613,45 +528,35 @@ export default function DiscoverPage() {
                       )}
                     </div>
                   </article>
-                )
-              )}
-            </div>
-          )}
-        </section>
+                ))}
+              </div>
+            )}
+          </section>
 
-        {/* ================================================= */}
-        {/* YOUTUBE */}
-        {/* ================================================= */}
+          {/* YOUTUBE */}
+          <section className="mt-14">
+            <div className="mb-5">
+              <h2 className="text-xl font-semibold">Live</h2>
 
-        <section className="mt-14">
-          <div className="mb-5">
-            <h2 className="text-xl font-semibold">
-              Live
-            </h2>
-
-            <p className="mt-1 text-sm text-neutral-500 dark:text-neutral-400">
-              Recent videos related to what
-              the community is discussing.
-            </p>
-          </div>
-
-          {data.youtube.length === 0 ? (
-            <div className="rounded-xl border border-black p-6 dark:border-white">
-              <p className="text-sm text-neutral-500 dark:text-neutral-400">
-                No YouTube results are
-                available yet.
-              </p>
-
-              <p className="mt-2 text-xs text-neutral-400">
-                Add YOUTUBE_API_KEY to the
-                backend environment to enable
-                this section.
+              <p className="mt-1 text-sm text-neutral-500 dark:text-neutral-400">
+                Recent videos related to what the community is discussing.
               </p>
             </div>
-          ) : (
-            <div className="grid gap-6 sm:grid-cols-2">
-              {data.youtube.map(
-                (video) => (
+
+            {data.youtube.length === 0 ? (
+              <div className="rounded-xl border border-black p-6 dark:border-white">
+                <p className="text-sm text-neutral-500 dark:text-neutral-400">
+                  No YouTube results are available yet.
+                </p>
+
+                <p className="mt-2 text-xs text-neutral-400">
+                  Add YOUTUBE_API_KEY to the backend environment to enable this
+                  section.
+                </p>
+              </div>
+            ) : (
+              <div className="grid gap-6 sm:grid-cols-2">
+                {data.youtube.map((video) => (
                   <article
                     key={video.id}
                     className="overflow-hidden rounded-xl border border-black dark:border-white"
@@ -668,9 +573,7 @@ export default function DiscoverPage() {
                     </div>
 
                     <div className="p-4">
-                      <h3 className="font-medium">
-                        {video.title}
-                      </h3>
+                      <h3 className="font-medium">{video.title}</h3>
 
                       <p className="mt-2 text-xs text-neutral-500 dark:text-neutral-400">
                         {video.channelTitle}
@@ -678,46 +581,35 @@ export default function DiscoverPage() {
 
                       {video.publishedAt && (
                         <p className="mt-1 text-xs text-neutral-400">
-                          {new Date(
-                            video.publishedAt
-                          ).toLocaleDateString()}
+                          {new Date(video.publishedAt).toLocaleDateString()}
                         </p>
                       )}
                     </div>
                   </article>
-                )
-              )}
-            </div>
-          )}
-        </section>
+                ))}
+              </div>
+            )}
+          </section>
 
-        {/* ================================================= */}
-        {/* NEWS */}
-        {/* ================================================= */}
+          {/* NEWS */}
+          <section className="mt-14">
+            <div className="mb-5">
+              <h2 className="text-xl font-semibold">Anime News</h2>
 
-        <section className="mt-14">
-          <div className="mb-5">
-            <h2 className="text-xl font-semibold">
-              Anime News
-            </h2>
-
-            <p className="mt-1 text-sm text-neutral-500 dark:text-neutral-400">
-              Latest headlines related to
-              the current topics.
-            </p>
-          </div>
-
-          {data.news.length === 0 ? (
-            <div className="rounded-xl border border-black p-6 dark:border-white">
-              <p className="text-sm text-neutral-500 dark:text-neutral-400">
-                No related news is available
-                right now.
+              <p className="mt-1 text-sm text-neutral-500 dark:text-neutral-400">
+                Latest headlines related to the current topics.
               </p>
             </div>
-          ) : (
-            <div className="divide-y divide-black rounded-xl border border-black dark:divide-white dark:border-white">
-              {data.news.map(
-                (article, index) => (
+
+            {data.news.length === 0 ? (
+              <div className="rounded-xl border border-black p-6 dark:border-white">
+                <p className="text-sm text-neutral-500 dark:text-neutral-400">
+                  No related news is available right now.
+                </p>
+              </div>
+            ) : (
+              <div className="divide-y divide-black rounded-xl border border-black dark:divide-white dark:border-white">
+                {data.news.map((article, index) => (
                   <a
                     key={`${article.link}-${index}`}
                     href={article.link}
@@ -725,87 +617,68 @@ export default function DiscoverPage() {
                     rel="noopener noreferrer"
                     className="block p-5 transition hover:bg-neutral-100 dark:hover:bg-neutral-900"
                   >
-                    <h3 className="font-medium">
-                      {article.title}
-                    </h3>
+                    <h3 className="font-medium">{article.title}</h3>
 
                     <div className="mt-2 flex flex-wrap gap-2 text-xs text-neutral-500 dark:text-neutral-400">
-                      {article.source && (
-                        <span>
-                          {article.source}
-                        </span>
-                      )}
+                      {article.source && <span>{article.source}</span>}
 
                       {article.pubDate && (
                         <span>
-                          ·{' '}
-                          {new Date(
-                            article.pubDate
-                          ).toLocaleDateString()}
+                          · {new Date(article.pubDate).toLocaleDateString()}
                         </span>
                       )}
                     </div>
                   </a>
-                )
-              )}
-            </div>
-          )}
-        </section>
-
-  {/* ================================================= */}
-{/* POPULAR AUTHORS */}
-{/* ================================================= */}
-
-<section className="mt-14">
-  <div className="mb-5">
-    <h2 className="text-xl font-semibold">
-      Popular Authors
-    </h2>
-
-    <p className="mt-1 text-sm text-neutral-500 dark:text-neutral-400">
-      Authors doing the most.
-    </p>
-  </div>
-  {data.popularAuthors.length === 0 ? (
-    <div className="rounded-xl border border-black p-6 dark:border-white">
-      <p className="text-sm text-neutral-500 dark:text-neutral-400">
-        No authors are available yet.
-      </p>
-    </div>
-  ) : (
-    <div className="hide-scrollbar flex snap-x snap-mandatory gap-6 overflow-x-auto pb-3">
-      {data.popularAuthors.slice(0, 3).map(
-        (author) => (
-          <Link
-            key={author._id}
-            href={`/profile/${author._id}`}
-            className="flex min-w-[100px] snap-start flex-col items-center text-center transition-opacity hover:opacity-70"
-          >
-            {author.profileImage ? (
-              <img
-                src={author.profileImage}
-                alt={author.name}
-                className="h-20 w-20 rounded-full object-cover"
-              />
-            ) : (
-              <div className="flex h-20 w-20 items-center justify-center rounded-full border border-black text-xl font-semibold dark:border-white">
-                {author.name
-                  ?.charAt(0)
-                  .toUpperCase()}
+                ))}
               </div>
             )}
+          </section>
 
-            <span className="mt-3 max-w-[100px] truncate text-sm font-medium">
-              {author.name}
-            </span>
-          </Link>
-        )
-      )}
+          {/* POPULAR AUTHORS */}
+          <section className="mt-14">
+            <div className="mb-5">
+              <h2 className="text-xl font-semibold">Popular Authors</h2>
+
+              <p className="mt-1 text-sm text-neutral-500 dark:text-neutral-400">
+                Authors doing the most.
+              </p>
+            </div>
+            {data.popularAuthors.length === 0 ? (
+              <div className="rounded-xl border border-black p-6 dark:border-white">
+                <p className="text-sm text-neutral-500 dark:text-neutral-400">
+                  No authors are available yet.
+                </p>
+              </div>
+            ) : (
+              <div className="hide-scrollbar flex snap-x snap-mandatory gap-6 overflow-x-auto pb-3">
+                {data.popularAuthors.slice(0, 3).map((author) => (
+                  <Link
+                    key={author._id}
+                    href={`/profile/${author._id}`}
+                    className="flex min-w-[100px] snap-start flex-col items-center text-center transition-opacity hover:opacity-70"
+                  >
+                    {author.profileImage ? (
+                      <img
+                        src={author.profileImage}
+                        alt={author.name}
+                        className="h-20 w-20 rounded-full object-cover"
+                      />
+                    ) : (
+                      <div className="flex h-20 w-20 items-center justify-center rounded-full border border-black text-xl font-semibold dark:border-white">
+                        {author.name?.charAt(0).toUpperCase()}
+                      </div>
+                    )}
+
+                    <span className="mt-3 max-w-[100px] truncate text-sm font-medium">
+                      {author.name}
+                    </span>
+                  </Link>
+                ))}
+              </div>
+            )}
+          </section>
+        </div>
+      </main>
     </div>
-  )}
-</section>
-
-      </div>
-    </main>
   );
 }

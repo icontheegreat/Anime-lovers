@@ -12,11 +12,20 @@ import {
   searchPosts,
   savePost,
   unsavePost,
-  getSavedPosts
+  getSavedPosts,
 } from '../controllers/posts';
 
-
 const r = Router();
+
+const postUploadFields = [
+  { name: 'media', maxCount: 1 },
+  { name: 'threadMedia', maxCount: 10 },
+  { name: 'threadMedia0', maxCount: 1 },
+  { name: 'threadMedia1', maxCount: 1 },
+  { name: 'threadMedia2', maxCount: 1 },
+  { name: 'threadMedia3', maxCount: 1 },
+  { name: 'threadMedia4', maxCount: 1 },
+];
 
 r.get('/', listPosts);
 
@@ -37,39 +46,17 @@ r.get('/:slug', getPost);
 r.post(
   '/',
   requireAuth,
-  upload.fields([
-    {
-      name: 'media',
-      maxCount: 1
-    },
-    {
-      name: 'threadMedia',
-      maxCount: 10
-    }
-  ]),
+  upload.fields(postUploadFields),
   createPost
 );
 
 r.put(
   '/:id',
   requireAuth,
-  upload.fields([
-    {
-      name: 'media',
-      maxCount: 1
-    },
-    {
-      name: 'threadMedia',
-      maxCount: 10
-    }
-  ]),
+  upload.fields(postUploadFields),
   updatePost
 );
 
-r.delete(
-  '/:id',
-  requireAuth,
-  deletePost
-);
+r.delete('/:id', requireAuth, deletePost);
 
 export default r;
