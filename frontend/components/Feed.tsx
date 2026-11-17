@@ -18,7 +18,7 @@ import {
 import { api } from '../lib/api';
 import { Post, ThreadItem } from '../types';
 import DownloadVideoButton from './DownloadVideoButton';
-// import SavePostButton from './SavePostButton';
+import SavePostButton from './SavePostButton';
 
 const threshold = 110;
 
@@ -350,7 +350,7 @@ export default function Feed({
             {post.mediaType === 'video' && (
               <DownloadVideoButton postId={post._id} />
             )}
-            {/* <SavePostButton postId={post._id} /> */}
+            <SavePostButton postId={post._id} />
           </div>
 
           <div className="mt-5 flex flex-wrap gap-3 text-black dark:text-white">
