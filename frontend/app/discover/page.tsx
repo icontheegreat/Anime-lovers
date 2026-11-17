@@ -247,10 +247,20 @@ export default function DiscoverPage() {
 
   return (
     <div className="min-h-screen bg-white text-black dark:bg-black dark:text-white">
-      {/* 200vh Scroll Assembly Eren Hero */}
+    {/* Interactive 3D Anime Sphere */}
       {showHero && (
         <AnimeSphereHero
-          animeList={data.popularAnime}
+          animeList={[
+            ...data.popularAnime,
+            ...data.anime.map((a) => ({
+              name: preferredTitle(a),
+              image: a.coverImage,
+            })),
+          ]}
+          onSelectAnime={(animeName) => {
+            setSearch(animeName);
+            setShowHero(false);
+          }}
           onSkip={() => setShowHero(false)}
         />
       )}
