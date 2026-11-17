@@ -2,7 +2,7 @@
 
 import React, { useMemo, useRef, useEffect, useState } from "react";
 import { Canvas, useFrame, useThree, ThreeElements } from "@react-three/fiber";
-import { OrbitControls, useTexture } from "@react-three/drei";
+import { OrbitControls } from "@react-three/drei";
 import { useScroll } from "framer-motion";
 import * as THREE from "three";
 
@@ -23,8 +23,9 @@ interface AnimeSphereHeroProps {
   onSelectAnime?: (animeName: string) => void;
 }
 
-const CARD_COUNT = 220;
+const CARD_COUNT = 160;
 const GRID_COLS = 16;
+const MAX_UNIQUE_TEXTURES = 48;
 
 const ANILIST_QUERY = `
   query ($page: Int, $perPage: Int) {
@@ -42,9 +43,28 @@ const ANILIST_QUERY = `
   }
 `;
 
+function createFallbackTexture(): THREE.CanvasTexture {
+  const canvas = document.createElement("canvas");
+  canvas.width = 128;
+  canvas.height = 180;
+  const ctx = canvas.getContext("2d");
+  if (ctx) {
+    const grad = ctx.createLinearGradient(0, 0, 128, 180);
+    grad.addColorStop(0, "#1f1f23");
+    grad.addColorStop(1, "#09090b");
+    ctx.fillStyle = grad;
+    ctx.fillRect(0, 0, 128, 180);
+    ctx.strokeStyle = "rgba(255,255,255,0.12)";
+    ctx.strokeRect(4, 4, 120, 172);
+  }
+  const tex = new THREE.CanvasTexture(canvas);
+  tex.colorSpace = THREE.SRGBColorSpace;
+  return tex;
+}
+
 async function fetchGlobalAnimeCatalog(): Promise<PopularAnime[]> {
   try {
-    const pages = [1, 2, 3, 4, 5]; // 5 * 50 = 250 unique anime covers
+    const pages = [1, 2]; // 100 top anime covers (keeps WebGL texture memory safe on mobile)
     const responses = await Promise.all(
       pages.map((page) =>
         fetch("https://graphql.anilist.co", {
@@ -57,7 +77,9 @@ async function fetchGlobalAnimeCatalog(): Promise<PopularAnime[]> {
             query: ANILIST_QUERY,
             variables: { page, perPage: 50 },
           }),
-        }).then((res) => (res.ok ? res.json() : null))
+        })
+          .then((res) => (res.ok ? res.json() : null))
+          .catch(() => null)
       )
     );
 
@@ -82,7 +104,7 @@ async function fetchGlobalAnimeCatalog(): Promise<PopularAnime[]> {
   }
 }
 
-function buildSphereCards(
+function buildUniquePool(
   communityAnime: PopularAnime[] = [],
   globalAnime: PopularAnime[] = []
 ): PopularAnime[] {
@@ -93,19 +115,32 @@ function buildSphereCards(
     if (item.image && !seen.has(item.image)) {
       seen.add(item.image);
       combined.push(item);
+      if (combined.length >= MAX_UNIQUE_TEXTURES) break;
     }
   }
 
-  if (combined.length === 0) return [];
+  return combined;
+}
 
-  const dataset: PopularAnime[] = [];
-  for (let i = 0; i < CARD_COUNT; i++) {
-    // Spread across the entire catalog without repeating adjacent tiles
-    const idx = i % combined.length;
-    dataset.push(combined[idx]);
+class CanvasErrorBoundary extends React.Component<
+  { fallback: React.ReactNode; children: React.ReactNode },
+  { hasError: boolean }
+> {
+  constructor(props: { fallback: React.ReactNode; children: React.ReactNode }) {
+    super(props);
+    this.state = { hasError: false };
   }
 
-  return dataset;
+  static getDerivedStateFromError() {
+    return { hasError: true };
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return this.props.fallback;
+    }
+    return this.props.children;
+  }
 }
 
 function CardMesh({
@@ -116,7 +151,7 @@ function CardMesh({
   progressRef,
   index,
   total,
-  image,
+  texture,
   onSelect,
 }: {
   groundPos: THREE.Vector3;
@@ -126,16 +161,10 @@ function CardMesh({
   progressRef: React.MutableRefObject<number>;
   index: number;
   total: number;
-  image: string;
+  texture: THREE.Texture;
   onSelect: () => void;
 }) {
   const meshRef = useRef<THREE.Mesh>(null);
-  const texture = useTexture(image);
-
-  useMemo(() => {
-    texture.colorSpace = THREE.SRGBColorSpace;
-    texture.minFilter = THREE.LinearFilter;
-  }, [texture]);
 
   const staggerOffset = (index / total) * 0.22;
   const tempPos = useMemo(() => new THREE.Vector3(), []);
@@ -188,18 +217,63 @@ function ResponsiveCamera() {
 }
 
 function SceneContent({
-  cards,
+  pool,
   progressRef,
   onSelectAnime,
   onSkip,
 }: {
-  cards: PopularAnime[];
+  pool: PopularAnime[];
   progressRef: React.MutableRefObject<number>;
   onSelectAnime?: (name: string) => void;
   onSkip: () => void;
 }) {
   const globeGroupRef = useRef<THREE.Group>(null);
   const gridRef = useRef<THREE.GridHelper>(null);
+  const fallbackTexture = useMemo(() => createFallbackTexture(), []);
+  const [textures, setTextures] = useState<THREE.Texture[]>([]);
+
+  // Safely load textures with CORS handling and per-image fallback so 1 bad URL never crashes the app
+  useEffect(() => {
+    if (pool.length === 0) {
+      setTextures([]);
+      return;
+    }
+
+    let cancelled = false;
+    const loader = new THREE.TextureLoader();
+    loader.setCrossOrigin("anonymous");
+
+    const loadedList: THREE.Texture[] = new Array(pool.length).fill(
+      fallbackTexture
+    );
+    setTextures([...loadedList]);
+
+    pool.forEach((item, idx) => {
+      if (!item.image) return;
+
+      loader.load(
+        item.image,
+        (tex) => {
+          if (cancelled) {
+            tex.dispose();
+            return;
+          }
+          tex.colorSpace = THREE.SRGBColorSpace;
+          tex.minFilter = THREE.LinearFilter;
+          loadedList[idx] = tex;
+          setTextures([...loadedList]);
+        },
+        undefined,
+        () => {
+          // Keep fallbackTexture on error; never throw unhandled rejection
+        }
+      );
+    });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [pool, fallbackTexture]);
 
   useFrame((_, delta) => {
     const p = progressRef.current;
@@ -215,17 +289,16 @@ function SceneContent({
   });
 
   const spatialData = useMemo(() => {
-    const count = cards.length;
     const sphereRadius = 7.6;
     const phi = Math.PI * (3 - Math.sqrt(5));
-    const rows = Math.ceil(count / GRID_COLS);
+    const rows = Math.ceil(CARD_COUNT / GRID_COLS);
 
     const dummy = new THREE.Object3D();
     const groundQuat = new THREE.Quaternion().setFromEuler(
       new THREE.Euler(-Math.PI / 2, 0, 0)
     );
 
-    return cards.map((_, i) => {
+    return Array.from({ length: CARD_COUNT }, (_, i) => {
       const row = Math.floor(i / GRID_COLS);
       const col = i % GRID_COLS;
       const groundX = (col - (GRID_COLS - 1) / 2) * 1.4;
@@ -233,7 +306,7 @@ function SceneContent({
       const groundZ = (row - (rows - 1) / 2) * 1.85;
       const groundPos = new THREE.Vector3(groundX, groundY, groundZ);
 
-      const y = 1 - (i / (count - 1 || 1)) * 2;
+      const y = 1 - (i / (CARD_COUNT - 1)) * 2;
       const r = Math.sqrt(Math.max(0, 1 - y * y));
       const theta = phi * i;
 
@@ -254,9 +327,9 @@ function SceneContent({
         sphereQuat,
       };
     });
-  }, [cards]);
+  }, []);
 
-  if (cards.length === 0) return null;
+  if (pool.length === 0) return null;
 
   return (
     <>
@@ -268,25 +341,33 @@ function SceneContent({
           position={[0, -4.3, 0]}
         />
 
-        {spatialData.map((data, idx) => (
-          <CardMesh
-            key={`${idx}-${cards[idx].image}`}
-            index={idx}
-            total={cards.length}
-            groundPos={data.groundPos}
-            spherePos={data.spherePos}
-            groundQuat={data.groundQuat}
-            sphereQuat={data.sphereQuat}
-            progressRef={progressRef}
-            image={cards[idx].image!}
-            onSelect={() => {
-              if (onSelectAnime) {
-                onSelectAnime(cards[idx].name);
-              }
-              onSkip();
-            }}
-          />
-        ))}
+        {spatialData.map((data, idx) => {
+          const row = Math.floor(idx / GRID_COLS);
+          const col = idx % GRID_COLS;
+          const poolIdx = (col * 3 + row * 7) % pool.length;
+          const anime = pool[poolIdx];
+          const tex = textures[poolIdx] || fallbackTexture;
+
+          return (
+            <CardMesh
+              key={idx}
+              index={idx}
+              total={CARD_COUNT}
+              groundPos={data.groundPos}
+              spherePos={data.spherePos}
+              groundQuat={data.groundQuat}
+              sphereQuat={data.sphereQuat}
+              progressRef={progressRef}
+              texture={tex}
+              onSelect={() => {
+                if (onSelectAnime && anime?.name) {
+                  onSelectAnime(anime.name);
+                }
+                onSkip();
+              }}
+            />
+          );
+        })}
       </group>
     </>
   );
@@ -299,6 +380,7 @@ export function AnimeSphereHero({
 }: AnimeSphereHeroProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const progressRef = useRef(0.55);
+  const [mounted, setMounted] = useState(false);
   const [globalCatalog, setGlobalCatalog] = useState<PopularAnime[]>([]);
 
   const { scrollYProgress } = useScroll({
@@ -307,6 +389,7 @@ export function AnimeSphereHero({
   });
 
   useEffect(() => {
+    setMounted(true);
     let active = true;
     fetchGlobalAnimeCatalog().then((catalog) => {
       if (active && catalog.length > 0) {
@@ -326,10 +409,14 @@ export function AnimeSphereHero({
     });
   }, [scrollYProgress]);
 
-  const cards = useMemo(
-    () => buildSphereCards(animeList, globalCatalog),
+  const pool = useMemo(
+    () => buildUniquePool(animeList, globalCatalog),
     [animeList, globalCatalog]
   );
+
+  if (!mounted) {
+    return <div className="h-screen w-full bg-neutral-950" />;
+  }
 
   return (
     <div
@@ -347,23 +434,35 @@ export function AnimeSphereHero({
           </button>
         </div>
 
-        <Canvas dpr={[1, 2]} camera={{ position: [0, 0.5, 22], fov: 48 }}>
-          <color attach="background" args={["#0a0a0a"]} />
-          <ambientLight intensity={1.8} />
-          <React.Suspense fallback={null}>
+        <CanvasErrorBoundary
+          fallback={
+            <div className="flex h-full w-full items-center justify-center bg-neutral-950 text-sm text-neutral-400">
+              <button
+                type="button"
+                onClick={onSkip}
+                className="rounded-full border border-white/20 px-5 py-2.5 text-white"
+              >
+                Continue to Discover ↓
+              </button>
+            </div>
+          }
+        >
+          <Canvas dpr={[1, 2]} camera={{ position: [0, 0.5, 22], fov: 48 }}>
+            <color attach="background" args={["#0a0a0a"]} />
+            <ambientLight intensity={1.8} />
             <SceneContent
-              cards={cards}
+              pool={pool}
               progressRef={progressRef}
               onSelectAnime={onSelectAnime}
               onSkip={onSkip}
             />
-          </React.Suspense>
-          <OrbitControls
-            enableZoom={false}
-            enablePan={false}
-            rotateSpeed={0.65}
-          />
-        </Canvas>
+            <OrbitControls
+              enableZoom={false}
+              enablePan={false}
+              rotateSpeed={0.65}
+            />
+          </Canvas>
+        </CanvasErrorBoundary>
       </div>
     </div>
   );
