@@ -1,4 +1,4 @@
-import { Schema, model, Document } from 'mongoose';
+import { Schema, model, Document, Types } from 'mongoose';
 
 export interface IAuthor extends Document {
   name: string;
@@ -9,6 +9,7 @@ export interface IAuthor extends Document {
   passwordHash: string;
   bio: string;
   socials: Record<string, string>;
+  savedPosts: Types.ObjectId[];
   createdAt: Date;
 }
 
@@ -66,6 +67,13 @@ const schema = new Schema<IAuthor>(
       of: String,
       default: {},
     },
+
+    savedPosts: [
+      {
+        type: Schema.Types.ObjectId,
+        ref: 'Post',
+      },
+    ],
   },
   {
     timestamps: {
