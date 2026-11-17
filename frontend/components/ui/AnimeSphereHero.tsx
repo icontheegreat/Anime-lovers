@@ -23,37 +23,86 @@ interface AnimeSphereHeroProps {
   onSelectAnime?: (animeName: string) => void;
 }
 
-const FALLBACK_TEXTURES = [
-  "https://images.unsplash.com/photo-1578632767115-351597cf2477?w=400&q=80",
-  "https://images.unsplash.com/photo-1607604276583-eef5d076aa5f?w=400&q=80",
-  "https://images.unsplash.com/photo-1534447677768-be436bb09401?w=400&q=80",
-  "https://images.unsplash.com/photo-1563089145-599997674d42?w=400&q=80",
-  "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=400&q=80",
-];
+const CARD_COUNT = 220;
+const GRID_COLS = 16;
 
-const CARD_COUNT = 180;
-const GRID_COLS = 15;
+const ANILIST_QUERY = `
+  query ($page: Int, $perPage: Int) {
+    Page(page: $page, perPage: $perPage) {
+      media(type: ANIME, sort: POPULARITY_DESC, isAdult: false) {
+        title {
+          english
+          romaji
+        }
+        coverImage {
+          large
+        }
+      }
+    }
+  }
+`;
 
-function generateDataset(initialData?: PopularAnime[]): PopularAnime[] {
-  const validInitial = (initialData ?? []).filter(
-    (item): item is PopularAnime & { image: string } => Boolean(item.image)
-  );
+async function fetchGlobalAnimeCatalog(): Promise<PopularAnime[]> {
+  try {
+    const pages = [1, 2, 3, 4, 5]; // 5 * 50 = 250 unique anime covers
+    const responses = await Promise.all(
+      pages.map((page) =>
+        fetch("https://graphql.anilist.co", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Accept: "application/json",
+          },
+          body: JSON.stringify({
+            query: ANILIST_QUERY,
+            variables: { page, perPage: 50 },
+          }),
+        }).then((res) => (res.ok ? res.json() : null))
+      )
+    );
 
-  const pool: PopularAnime[] =
-    validInitial.length > 0
-      ? validInitial
-      : FALLBACK_TEXTURES.map((url, idx) => ({
-          name: `Featured Anime ${idx + 1}`,
-          image: url,
-        }));
+    const items: PopularAnime[] = [];
+    const seen = new Set<string>();
+
+    for (const res of responses) {
+      const media = res?.data?.Page?.media ?? [];
+      for (const m of media) {
+        const name = m?.title?.english || m?.title?.romaji;
+        const image = m?.coverImage?.large;
+        if (name && image && !seen.has(name)) {
+          seen.add(name);
+          items.push({ name, image });
+        }
+      }
+    }
+
+    return items;
+  } catch {
+    return [];
+  }
+}
+
+function buildSphereCards(
+  communityAnime: PopularAnime[] = [],
+  globalAnime: PopularAnime[] = []
+): PopularAnime[] {
+  const combined: PopularAnime[] = [];
+  const seen = new Set<string>();
+
+  for (const item of [...communityAnime, ...globalAnime]) {
+    if (item.image && !seen.has(item.image)) {
+      seen.add(item.image);
+      combined.push(item);
+    }
+  }
+
+  if (combined.length === 0) return [];
 
   const dataset: PopularAnime[] = [];
   for (let i = 0; i < CARD_COUNT; i++) {
-    const row = Math.floor(i / GRID_COLS);
-    const col = i % GRID_COLS;
-    // Offset each row by a prime step so identical posters never stack vertically
-    const poolIdx = (col * 3 + row * 7) % pool.length;
-    dataset.push(pool[poolIdx]);
+    // Spread across the entire catalog without repeating adjacent tiles
+    const idx = i % combined.length;
+    dataset.push(combined[idx]);
   }
 
   return dataset;
@@ -100,16 +149,13 @@ function CardMesh({
       0,
       Math.min(1, (raw - staggerOffset) / (1 - staggerOffset || 1))
     );
-    // Smooth easeInOutCubic
     const eased = t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
-
-    const arcLift = Math.sin(eased * Math.PI) * 2.8;
+    const arcLift = Math.sin(eased * Math.PI) * 2.6;
 
     tempPos.lerpVectors(groundPos, spherePos, eased);
     tempPos.y += arcLift;
     meshRef.current.position.copy(tempPos);
 
-    // Smoothly slerp orientation from flat floor to outward-facing sphere normal
     tempQuat.slerpQuaternions(groundQuat, sphereQuat, eased);
     meshRef.current.quaternion.copy(tempQuat);
   });
@@ -122,7 +168,7 @@ function CardMesh({
         onSelect();
       }}
     >
-      <planeGeometry args={[1.15, 1.65]} />
+      <planeGeometry args={[1.1, 1.58]} />
       <meshBasicMaterial map={texture} side={THREE.DoubleSide} />
     </mesh>
   );
@@ -133,7 +179,7 @@ function ResponsiveCamera() {
 
   useEffect(() => {
     const isPortrait = size.width < size.height;
-    camera.position.set(0, isPortrait ? 1.5 : 1.0, isPortrait ? 27 : 20);
+    camera.position.set(0, 0.5, isPortrait ? 26 : 19.5);
     camera.lookAt(0, 0, 0);
     camera.updateProjectionMatrix();
   }, [camera, size.width, size.height]);
@@ -142,12 +188,12 @@ function ResponsiveCamera() {
 }
 
 function SceneContent({
-  animeList,
+  cards,
   progressRef,
   onSelectAnime,
   onSkip,
 }: {
-  animeList?: PopularAnime[];
+  cards: PopularAnime[];
   progressRef: React.MutableRefObject<number>;
   onSelectAnime?: (name: string) => void;
   onSkip: () => void;
@@ -158,23 +204,19 @@ function SceneContent({
   useFrame((_, delta) => {
     const p = progressRef.current;
     if (globeGroupRef.current) {
-      // Gentle idle spin once assembled into a sphere
-      const spinSpeed = 0.06 + p * 0.14;
+      const spinSpeed = 0.08 + p * 0.14;
       globeGroupRef.current.rotation.y += delta * spinSpeed;
     }
     if (gridRef.current) {
-      // Fade floor grid out as cards lift into the sphere
       const mat = gridRef.current.material as THREE.Material;
       mat.transparent = true;
       mat.opacity = Math.max(0, 1 - p * 1.6);
     }
   });
 
-  const cards = useMemo(() => generateDataset(animeList), [animeList]);
-
   const spatialData = useMemo(() => {
     const count = cards.length;
-    const sphereRadius = 7.4;
+    const sphereRadius = 7.6;
     const phi = Math.PI * (3 - Math.sqrt(5));
     const rows = Math.ceil(count / GRID_COLS);
 
@@ -184,15 +226,13 @@ function SceneContent({
     );
 
     return cards.map((_, i) => {
-      // 1. Centered Ground Plane Layout
       const row = Math.floor(i / GRID_COLS);
       const col = i % GRID_COLS;
-      const groundX = (col - (GRID_COLS - 1) / 2) * 1.45;
+      const groundX = (col - (GRID_COLS - 1) / 2) * 1.4;
       const groundY = -4.2;
-      const groundZ = (row - (rows - 1) / 2) * 1.9;
+      const groundZ = (row - (rows - 1) / 2) * 1.85;
       const groundPos = new THREE.Vector3(groundX, groundY, groundZ);
 
-      // 2. Fibonacci 3D Sphere Layout
       const y = 1 - (i / (count - 1 || 1)) * 2;
       const r = Math.sqrt(Math.max(0, 1 - y * y));
       const theta = phi * i;
@@ -203,7 +243,6 @@ function SceneContent({
         Math.sin(theta) * r * sphereRadius
       );
 
-      // Compute outward-facing quaternion on the sphere surface
       dummy.position.copy(spherePos);
       dummy.lookAt(spherePos.clone().multiplyScalar(2));
       const sphereQuat = dummy.quaternion.clone();
@@ -216,6 +255,8 @@ function SceneContent({
       };
     });
   }, [cards]);
+
+  if (cards.length === 0) return null;
 
   return (
     <>
@@ -237,9 +278,9 @@ function SceneContent({
             groundQuat={data.groundQuat}
             sphereQuat={data.sphereQuat}
             progressRef={progressRef}
-            image={cards[idx].image || FALLBACK_TEXTURES[0]}
+            image={cards[idx].image!}
             onSelect={() => {
-              if (onSelectAnime && !cards[idx].name.startsWith("Featured Anime")) {
+              if (onSelectAnime) {
                 onSelectAnime(cards[idx].name);
               }
               onSkip();
@@ -257,8 +298,8 @@ export function AnimeSphereHero({
   onSelectAnime,
 }: AnimeSphereHeroProps) {
   const containerRef = useRef<HTMLDivElement>(null);
-  const progressRef = useRef(0.35);
-  const [scrollHintVisible, setScrollHintVisible] = useState(true);
+  const progressRef = useRef(0.55);
+  const [globalCatalog, setGlobalCatalog] = useState<PopularAnime[]>([]);
 
   const { scrollYProgress } = useScroll({
     target: containerRef,
@@ -266,64 +307,52 @@ export function AnimeSphereHero({
   });
 
   useEffect(() => {
-    // Start partially assembled (0.35) so the globe silhouette is visible immediately,
-    // then complete the full sphere as the user scrolls down
-    progressRef.current = 0.35;
-
-    return scrollYProgress.on("change", (v) => {
-      progressRef.current = Math.min(1, 0.35 + v * 0.75);
-      if (v > 0.15) {
-        setScrollHintVisible(false);
+    let active = true;
+    fetchGlobalAnimeCatalog().then((catalog) => {
+      if (active && catalog.length > 0) {
+        setGlobalCatalog(catalog);
       }
     });
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    progressRef.current = 0.55;
+
+    return scrollYProgress.on("change", (v) => {
+      progressRef.current = Math.min(1, 0.55 + v * 0.45);
+    });
   }, [scrollYProgress]);
+
+  const cards = useMemo(
+    () => buildSphereCards(animeList, globalCatalog),
+    [animeList, globalCatalog]
+  );
 
   return (
     <div
       ref={containerRef}
-      className="relative h-[180vh] w-full bg-neutral-950"
+      className="relative h-[160vh] w-full bg-neutral-950"
     >
       <div className="sticky top-0 h-screen w-full overflow-hidden">
-        {/* Top Hero Overlay to Eliminate Empty Void */}
-        <div className="pointer-events-none absolute inset-x-0 top-20 z-20 flex flex-col items-center px-5 text-center">
-          <span className="rounded-full border border-white/15 bg-white/5 px-3.5 py-1 text-[11px] font-medium uppercase tracking-widest text-neutral-300 backdrop-blur-md">
-            Interactive Archive
-          </span>
-          {/* <h2 className="mt-3 text-2xl font-semibold tracking-tight text-white sm:text-4xl">
-            Explore the Anime Sphere
-          </h2> */}
-          {/* <p className="mt-1.5 max-w-md text-xs text-neutral-400 sm:text-sm">
-            Drag to rotate or scroll to assemble the globe. Tap any card to
-            explore.
-          </p> */}
-        </div>
-
-        {/* Bottom Controls */}
-        <div className="absolute inset-x-0 bottom-8 z-30 flex items-center justify-between px-6">
-          <span
-            className={`text-xs text-neutral-400 transition-opacity duration-300 ${
-              scrollHintVisible ? "opacity-100" : "opacity-0"
-            }`}
-          >
-            Scroll to form globe ↓
-          </span>
-
+        <div className="absolute right-6 bottom-8 z-30">
           <button
             type="button"
             onClick={onSkip}
-            className="ml-auto rounded-full border border-white/20 bg-neutral-900/85 px-5 py-2.5 text-xs font-semibold tracking-wide text-white backdrop-blur-md transition hover:bg-white hover:text-black"
+            className="rounded-full border border-white/20 bg-neutral-900/85 px-5 py-2.5 text-xs font-semibold tracking-wide text-white backdrop-blur-md transition hover:bg-white hover:text-black"
           >
             Skip to Feed ↓
           </button>
         </div>
 
-        {/* 3D WebGL Canvas */}
-        <Canvas dpr={[1, 2]} camera={{ position: [0, 1.5, 24], fov: 48 }}>
+        <Canvas dpr={[1, 2]} camera={{ position: [0, 0.5, 22], fov: 48 }}>
           <color attach="background" args={["#0a0a0a"]} />
           <ambientLight intensity={1.8} />
           <React.Suspense fallback={null}>
             <SceneContent
-              animeList={animeList}
+              cards={cards}
               progressRef={progressRef}
               onSelectAnime={onSelectAnime}
               onSkip={onSkip}
